@@ -1,0 +1,13 @@
+{
+  "name": "@socket-talk/shared",
+  "type": "module",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "exports": {
+    "./*": "./dist/*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
