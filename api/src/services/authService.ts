@@ -1,7 +1,12 @@
-import type { UserSignupInput } from "@socket-talk/shared/schemas/userSchemas.js";
+import type {
+    UserSignupInput,
+    UserLoginInput,
+} from "@socket-talk/shared/schemas/userSchemas.js";
 import * as userService from "./userService.js";
 import { HttpError } from "../utils/HttpError.js";
-import { hash } from "bcryptjs";
+import { hash, compare } from "bcryptjs";
+import { randomBytes } from "node:crypto";
+import { prisma } from "../../lib/prisma.js";
 
 export async function signupUser(userData: UserSignupInput) {
     const exist =
@@ -21,4 +26,84 @@ export async function signupUser(userData: UserSignupInput) {
     });
 
     return user;
+}
+
+export async function createUserSession(userId: number) {
+    const randomId = randomBytes(16).toString("hex");
+    const expireDate = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    const session = await prisma.session.create({
+        data: {
+            id: randomId,
+            expiresAt: new Date(expireDate),
+            userId,
+        },
+    });
+
+    return session;
+}
+
+export async function loginByUsername({ username, password }: UserLoginInput) {
+    const user = await userService.getUserByUsername(username);
+    const err = new HttpError(401, "Invalid username or password");
+
+    if (!user) {
+        throw err;
+    }
+
+    // github or other Oauth user
+    if (user.password === null) {
+        throw err;
+    }
+
+    const isPasswordCorrect = await compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+        throw err;
+    }
+
+    const session = await createUserSession(user.id);
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { session, user: userWithoutPassword };
+}
+
+export async function verifySession(sessionId: string) {
+    const err = new HttpError(401, "Invalid session");
+
+    const session = await prisma.session.findUnique({
+        where: {
+            id: sessionId,
+        },
+    });
+
+    if (!session || Date.now() > session.expiresAt.getTime()) {
+        throw err;
+    }
+
+    return session;
+}
+
+export async function getAuthenticatedUser(sessionId: string) {
+    const session = await verifySession(sessionId);
+
+    const user = await prisma.user.findUnique({
+        where: {
+            id: session.userId,
+        },
+    });
+
+    if (!user) {
+        throw new HttpError(401, "Invalid session");
+    }
+
+    return user;
+}
+
+export async function logoutUser(sessionId: string) {
+    await prisma.session.deleteMany({
+        where: {
+            id: sessionId,
+        },
+    });
 }

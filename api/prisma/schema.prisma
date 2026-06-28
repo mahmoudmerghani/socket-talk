@@ -25,9 +25,10 @@ model User {
   password    String?
   firstName   String
   lastName    String
-  email       String @unique
-  isVerified  Boolean @default(false)
+  email       String    @unique
+  isVerified  Boolean   @default(false)
   avatarColor String
   avatarUrl   String?
+  createdAt   DateTime  @default(now())
   sessions    Session[]
 }

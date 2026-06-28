@@ -41,6 +41,13 @@ export const userSignupSchema = z
 
 export type UserSignupInput = z.infer<typeof userSignupSchema>;
 
+export const userLoginSchema = z.object({
+    username: z.string({ error: "Username is required." }),
+    password: z.string({ error: "Password is required." }),
+});
+
+export type UserLoginInput = z.infer<typeof userLoginSchema>;
+
 export const AVATAR_COLOR = [
     "blue",
     "green",
