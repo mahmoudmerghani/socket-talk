@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
-import { AVATAR_COLOR } from "@socket-talk/shared/schemas/userSchemas.js";
+import { AVATAR_COLORS } from "@socket-talk/shared/schemas/authSchemas.js";
 
 export async function getUserByEmail(email: string) {
     const user = await prisma.user.findUnique({
@@ -26,7 +26,7 @@ export async function createUser(
     user: Omit<Prisma.UserCreateInput, "avatarColor">,
 ) {
     const avatarColor =
-        AVATAR_COLOR[Math.floor(Math.random() * AVATAR_COLOR.length)]!;
+        AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]!;
 
     const newUser = await prisma.user.create({
         data: { ...user, avatarColor: avatarColor },

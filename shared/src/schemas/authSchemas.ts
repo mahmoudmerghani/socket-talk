@@ -1,6 +1,6 @@
-import { email, z } from "zod";
+import { z } from "zod";
 
-export const userSignupSchema = z
+export const signupSchema = z
     .object({
         firstName: z
             .string({ error: "First name is required." })
@@ -39,16 +39,16 @@ export const userSignupSchema = z
         error: "Passwords do not match.",
     });
 
-export type UserSignupInput = z.infer<typeof userSignupSchema>;
+export type SignupRequest = z.infer<typeof signupSchema>;
 
-export const userLoginSchema = z.object({
+export const loginSchema = z.object({
     username: z.string({ error: "Username is required." }),
     password: z.string({ error: "Password is required." }),
 });
 
-export type UserLoginInput = z.infer<typeof userLoginSchema>;
+export type LoginRequest = z.infer<typeof loginSchema>;
 
-export const AVATAR_COLOR = [
+export const AVATAR_COLORS = [
     "blue",
     "green",
     "orange",

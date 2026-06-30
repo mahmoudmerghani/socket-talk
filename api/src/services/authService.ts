@@ -1,14 +1,14 @@
 import type {
-    UserSignupInput,
-    UserLoginInput,
-} from "@socket-talk/shared/schemas/userSchemas.js";
+    LoginRequest,
+    SignupRequest,
+} from "@socket-talk/shared/schemas/authSchemas.js";
 import * as userService from "./userService.js";
 import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 
-export async function signupUser(userData: UserSignupInput) {
+export async function signupUser(userData: SignupRequest) {
     const exist =
         (await userService.getUserByEmail(userData.email)) ||
         (await userService.getUserByUsername(userData.username));
@@ -43,7 +43,7 @@ export async function createUserSession(userId: number) {
     return session;
 }
 
-export async function loginByUsername({ username, password }: UserLoginInput) {
+export async function loginByUsername({ username, password }: LoginRequest) {
     const user = await userService.getUserByUsername(username);
     const err = new HttpError(401, "Invalid username or password");
 
@@ -97,7 +97,9 @@ export async function getAuthenticatedUser(sessionId: string) {
         throw new HttpError(401, "Invalid session");
     }
 
-    return user;
+    const { password: _, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
 }
 
 export async function logoutUser(sessionId: string) {
