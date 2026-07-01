@@ -42,7 +42,7 @@ export const signupSchema = z
 export type SignupRequest = z.infer<typeof signupSchema>;
 
 export const loginSchema = z.object({
-    username: z.string({ error: "Username is required." }),
+    identifier: z.string({ error: "Username/email is required." }),
     password: z.string({ error: "Password is required." }),
 });
 

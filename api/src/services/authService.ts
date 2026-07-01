@@ -43,8 +43,8 @@ export async function createUserSession(userId: number) {
     return session;
 }
 
-export async function loginByUsername({ username, password }: LoginRequest) {
-    const user = await userService.getUserByUsername(username);
+export async function loginUser({ identifier, password }: LoginRequest) {
+    const user = await userService.getUserByEmailOrUsername(identifier);
     const err = new HttpError(401, "Invalid username or password");
 
     if (!user) {

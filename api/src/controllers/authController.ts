@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import * as authService from "../services/authService.js";
 
 export const login: RequestHandler = async (req, res) => {
-    const { user, session } = await authService.loginByUsername(req.body);
+    const { user, session } = await authService.loginUser(req.body);
 
     const isProduction = process.env.NODE_ENV === "production";
 
