@@ -2,17 +2,11 @@ import { z } from "zod";
 
 export const signupSchema = z
     .object({
-        firstName: z
+        displayName: z
             .string({ error: "First name is required." })
             .trim()
-            .min(1, { error: "First name is required." })
-            .max(50, { error: "First name must be at most 50 characters." }),
-
-        lastName: z
-            .string({ error: "Last name is required." })
-            .trim()
-            .min(1, { error: "Last name is required." })
-            .max(50, { error: "Last name must be at most 50 characters." }),
+            .min(1, { error: "Display name is required." })
+            .max(50, { error: "Display name must be at most 50 characters." }),
 
         username: z
             .string({ error: "Username is required." })
@@ -32,7 +26,20 @@ export const signupSchema = z
             error: "Please confirm your password.",
         }),
 
-        email: z.email({ error: "Email must be valid" }).trim().toLowerCase(),
+        email: z.preprocess(
+            (value) => {
+                if (typeof value === "string" && value.trim() === "") {
+                    return undefined;
+                }
+
+                return value;
+            },
+            z
+                .email({ error: "Email must be valid" })
+                .trim()
+                .toLowerCase()
+                .optional(),
+        ),
     })
     .refine((data) => data.password === data.passwordConfirm, {
         path: ["passwordConfirm"],
@@ -42,7 +49,7 @@ export const signupSchema = z
 export type SignupRequest = z.infer<typeof signupSchema>;
 
 export const loginSchema = z.object({
-    identifier: z.string({ error: "Username/email is required." }),
+    identifier: z.string({ error: "Username/Email is required." }),
     password: z.string({ error: "Password is required." }),
 });
 

@@ -23,9 +23,8 @@ model User {
   id          Int       @id @default(autoincrement())
   username    String    @unique
   password    String?
-  firstName   String
-  lastName    String
-  email       String    @unique
+  displayName String
+  email       String?   @unique
   isVerified  Boolean   @default(false)
   avatarColor String
   avatarUrl   String?

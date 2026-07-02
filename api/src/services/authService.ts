@@ -10,7 +10,8 @@ import { prisma } from "../../lib/prisma.js";
 
 export async function signupUser(userData: SignupRequest) {
     const exist =
-        (await userService.getUserByEmail(userData.email)) ||
+        (userData.email &&
+            (await userService.getUserByEmail(userData.email))) ||
         (await userService.getUserByUsername(userData.username));
 
     if (exist) {
@@ -21,8 +22,10 @@ export async function signupUser(userData: SignupRequest) {
 
     // this may error (excess property passwordConfirm)
     const user = await userService.createUser({
-        ...userData,
+        displayName: userData.displayName,
+        username: userData.username,
         password: hashedPassword,
+        email: userData.email || null,
     });
 
     return user;
