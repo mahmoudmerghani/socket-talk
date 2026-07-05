@@ -1,0 +1,112 @@
+.login-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+}
+
+.login-panel {
+  width: min(100%, 430px);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(34, 50, 65, 0.92), rgba(24, 34, 45, 0.96));
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow:
+    0 24px 40px rgba(3, 8, 12, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  animation: panel-enter 0.45s ease-out;
+}
+
+.brand-chip {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 25%, var(--accent-strong), var(--accent));
+  color: #062033;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 1rem;
+}
+
+.login-panel h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0.45rem 0 1.4rem;
+  color: var(--text-soft);
+}
+
+.login-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.login-form label {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.login-form input {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.78rem 0.9rem;
+  font: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-form input::placeholder {
+  color: #6d8598;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(73, 169, 234, 0.16);
+}
+
+.login-form button {
+  margin-top: 0.55rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  color: #08263d;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.82rem 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.login-form button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.login-form button:active {
+  transform: translateY(0);
+}
+
+.api-tag {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: #7fa1ba;
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
