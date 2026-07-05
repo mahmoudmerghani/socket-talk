@@ -2,6 +2,7 @@
   "name": "@socket-talk/shared",
   "type": "module",
   "dependencies": {
+    "type-fest": "^5.8.0",
     "zod": "^4.4.3"
   },
   "exports": {
