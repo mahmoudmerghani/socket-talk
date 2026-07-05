@@ -48,6 +48,13 @@ export const signupSchema = z
 
 export type SignupRequest = z.infer<typeof signupSchema>;
 
+export const githubSignupSchema = signupSchema.omit({
+    password: true,
+    passwordConfirm: true,
+});
+
+export type GithubSignupRequest = z.infer<typeof githubSignupSchema>;
+
 export const loginSchema = z.object({
     identifier: z.string({ error: "Username/Email is required." }),
     password: z.string({ error: "Password is required." }),
@@ -62,3 +69,5 @@ export const AVATAR_COLORS = [
     "purple",
     "red",
 ] as const;
+
+export const OAUTH_FAILURE_GITHUB_CODE = "oauth_github_failed";

@@ -40,10 +40,17 @@ export async function createUser(
 
     const newUser = await prisma.user.create({
         data: { ...user, avatarColor: avatarColor },
-        select: {
-            id: true,
-        },
     });
 
     return newUser;
+}
+
+export async function createOauthAccount(
+    data: Prisma.OauthAccountUncheckedCreateInput,
+) {
+    const account = await prisma.oauthAccount.create({
+        data,
+    });
+
+    return account;
 }

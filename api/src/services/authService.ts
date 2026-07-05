@@ -1,6 +1,7 @@
 import type {
     LoginRequest,
     SignupRequest,
+    GithubSignupRequest,
 } from "@socket-talk/shared/schemas/authSchemas.js";
 import * as userService from "./userService.js";
 import { HttpError } from "../utils/HttpError.js";
@@ -28,7 +29,11 @@ export async function signupUser(userData: SignupRequest) {
         email: userData.email || null,
     });
 
-    return user;
+    const session = await createUserSession(user.id);
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { session, user: userWithoutPassword };
 }
 
 export async function createUserSession(userId: number) {
@@ -111,4 +116,134 @@ export async function logoutUser(sessionId: string) {
             id: sessionId,
         },
     });
+}
+
+export function createOauthState() {
+    return randomBytes(16).toString("hex");
+}
+
+export async function getGithubUser(code: string) {
+    const err = new Error("Unexpected github oauth error");
+
+    const res = await fetch("https://github.com/login/oauth/access_token", {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            code,
+            client_id: process.env.GITHUB_CLIENT_ID!,
+            client_secret: process.env.GITHUB_CLIENT_SECRET!,
+            redirect_uri: `${process.env.API_URL}/auth/github/callback`,
+        }),
+    });
+
+    if (!res.ok) {
+        throw err;
+    }
+
+    const body = (await res.json()) as Record<string, unknown>;
+
+    if (!("access_token" in body)) {
+        throw err;
+    }
+
+    const userRes = await fetch("https://api.github.com/user", {
+        headers: {
+            Authorization: `Bearer ${body.access_token}`,
+        },
+    });
+
+    if (!userRes.ok) {
+        throw err;
+    }
+
+    const user = (await userRes.json()) as {
+        login: string;
+        id: number;
+        avatar_url: string;
+        name: string | null;
+    };
+
+    const emailRes = await fetch("https://api.github.com/user/emails", {
+        headers: {
+            Authorization: `Bearer ${body.access_token}`,
+        },
+    });
+
+    if (!emailRes.ok) {
+        throw err;
+    }
+
+    const emails = (await emailRes.json()) as {
+        email: string;
+        primary: boolean;
+        verified: boolean;
+    }[];
+
+    const chosenEmail = emails.find((e) => e.primary && e.verified)?.email;
+
+    return {
+        id: user.id,
+        username: user.login,
+        displayName: user.name,
+        avatarUrl: user.avatar_url,
+        email: chosenEmail ?? null,
+    };
+}
+
+export async function loginWithGithub(code: string) {
+    const user = await getGithubUser(code);
+    const exists = await prisma.oauthAccount.findUnique({
+        where: {
+            providerId_provider: {
+                provider: "GITHUB",
+                providerId: user.id.toString(),
+            },
+        },
+        include: {
+            user: true,
+        },
+    });
+
+    if (exists) {
+        const session = await createUserSession(exists.user.id);
+        const { password: _, ...userWithoutPassword } = exists.user;
+        return { session, user: userWithoutPassword };
+    }
+
+    // if user doesn't exist then return github user data to continue sign up
+
+    return user;
+}
+
+export async function signupWithGithub(
+    userSignupData: GithubSignupRequest,
+    userGithubData: Awaited<ReturnType<typeof getGithubUser>>,
+) {
+    // user provided data have priority over prefilled github data except email (verified by github)
+
+    const user = await userService.createUser({
+        displayName: userSignupData.displayName,
+        username: userSignupData.username,
+        avatarUrl: userGithubData.avatarUrl,
+        email: userGithubData.email ?? userSignupData.email ?? null,
+        isVerified: userGithubData.email !== null,
+    });
+
+    await userService.createOauthAccount({
+        provider: "GITHUB",
+        providerId: userGithubData.id.toString(),
+        userId: user.id,
+    });
+
+    const session = await createUserSession(user.id);
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+        session,
+        user: userWithoutPassword,
+    };
 }
