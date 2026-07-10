@@ -33,6 +33,7 @@ body,
 
 body {
   margin: 0;
+  padding: 1.25rem;
   color: var(--text);
   background:
     radial-gradient(circle at 85% 10%, rgba(73, 169, 234, 0.14), transparent 35%),

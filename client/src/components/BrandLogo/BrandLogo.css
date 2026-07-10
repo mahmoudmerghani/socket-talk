@@ -1,0 +1,44 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--accent-strong);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.brand-logo__word {
+  font-size: 1.9rem;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  transform: skewX(-12deg);
+  transform-origin: left center;
+}
+
+.brand-logo__equals {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.22rem;
+  width: 2.8rem;
+  transform: translateY(0.02rem) skewX(-12deg);
+}
+
+.brand-logo__equals span {
+  display: block;
+  width: 100%;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  box-shadow: 0 0 12px rgba(73, 169, 234, 0.2);
+}
+
+.brand-logo__equals span:first-child {
+  width: 100%;
+}
+
+.brand-logo__equals span:last-child {
+  width: 100%;
+}

@@ -1,29 +1,64 @@
 import { useState } from "react";
-import type { SubmitEvent } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
+import { api } from "../../api/api";
+import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
 import "./LoginPage.css";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+function LoadingText() {
+    return <span className="loading-text">Signing in...</span>;
+}
+
+function ErrorMessage({ message }: { message: string }) {
+    return <p className="error-message">{message}</p>;
+}
 
 export function LoginPage() {
+    const navigate = useNavigate();
+    const { setAuthenticatedUser } = useAuth();
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
-    const handleSubmit = (event) => {
+    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault();
 
-        // API wiring will be added when backend auth endpoint contract is finalized.
-        console.log("Login payload:", { identifier, password, apiBaseUrl });
+        setErrorMessage("");
+        setIsLoading(true);
+
+        const response = await api("/auth/login", {
+            method: "POST",
+            body: {
+                identifier,
+                password,
+            },
+        });
+
+        if ("error" in response) {
+            setErrorMessage(response.error);
+            setIsLoading(false);
+            return;
+        }
+
+        setAuthenticatedUser(response);
+        setIsLoading(false);
+        navigate("/", { replace: true });
     };
 
     return (
         <section className="login-page" aria-label="Login page">
+            <div className="login-page__brand">
+                <BrandLogo />
+            </div>
+
             <div className="login-panel">
-                <div className="brand-chip" aria-hidden="true">
-                    ST
-                </div>
 
                 <h1>Socket Talk</h1>
                 <p className="subtitle">Sign in to continue chatting</p>
+
+                {errorMessage ? <ErrorMessage message={errorMessage} /> : null}
 
                 <form className="login-form" onSubmit={handleSubmit}>
                     <label htmlFor="identifier">Email or username</label>
@@ -48,9 +83,14 @@ export function LoginPage() {
                         required
                     />
 
-                    <button type="submit">Sign In</button>
+                    <button type="submit" disabled={isLoading}>
+                        {isLoading ? <LoadingText /> : "Sign In"}
+                    </button>
                 </form>
 
+                <Link to="/auth" className="home-link">
+                    Back to Home
+                </Link>
             </div>
         </section>
     );

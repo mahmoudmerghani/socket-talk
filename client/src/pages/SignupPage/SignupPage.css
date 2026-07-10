@@ -1,4 +1,4 @@
-.login-page {
+.signup-page {
   min-height: 100svh;
   position: relative;
   display: grid;
@@ -6,14 +6,14 @@
   padding: 2rem 1.25rem;
 }
 
-.login-page__brand {
+.signup-page__brand {
   position: absolute;
   top: 0.9rem;
   left: 0.9rem;
   z-index: 2;
 }
 
-.login-panel {
+.signup-panel {
   width: min(100%, 430px);
   border: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(34, 50, 65, 0.92), rgba(24, 34, 45, 0.96));
@@ -22,10 +22,9 @@
   box-shadow:
     0 24px 40px rgba(3, 8, 12, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  animation: panel-enter 0.45s ease-out;
 }
 
-.login-panel h1 {
+.signup-panel h1 {
   margin: 0;
   font-size: clamp(1.8rem, 4vw, 2.2rem);
   font-weight: 700;
@@ -36,30 +35,21 @@
   color: var(--text-soft);
 }
 
-.home-link {
-  display: block;
-  width: fit-content;
-  margin: 0.9rem auto 0;
-  color: var(--accent-strong);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.home-link:hover {
-  text-decoration: underline;
-}
-
-.login-form {
+.signup-form {
   display: grid;
   gap: 0.75rem;
 }
 
-.login-form label {
+.signup-form label {
   color: var(--text-soft);
   font-size: 0.95rem;
 }
 
-.login-form input {
+.field-optional {
+  opacity: 0.8;
+}
+
+.signup-form input {
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
@@ -69,17 +59,17 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.login-form input::placeholder {
+.signup-form input::placeholder {
   color: #6d8598;
 }
 
-.login-form input:focus {
+.signup-form input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(73, 169, 234, 0.16);
 }
 
-.login-form button {
+.signup-form button {
   margin-top: 1.25rem;
   border: none;
   border-radius: 12px;
@@ -92,30 +82,41 @@
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-.login-form button:disabled {
+.signup-form button:disabled {
   cursor: not-allowed;
   filter: saturate(0.55);
   transform: none;
 }
 
-.login-form button:hover {
+.signup-form button:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
 
-.login-form button:disabled:hover {
+.signup-form button:disabled:hover {
   transform: none;
   filter: saturate(0.55);
 }
 
-.login-form button:active {
+.signup-form button:active {
   transform: translateY(0);
 }
 
-.api-tag {
-  margin: 1rem 0 0;
-  font-size: 0.85rem;
-  color: #7fa1ba;
+.login-link {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.72rem 0.95rem;
+  width: fit-content;
+  margin: 0.9rem auto 0;
+}
+
+.login-link:hover {
+  border-color: var(--accent);
 }
 
 .loading-text {
@@ -131,15 +132,4 @@
   color: #ffb7bf;
   font-size: 0.92rem;
   white-space: pre-line;
-}
-
-@keyframes panel-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }

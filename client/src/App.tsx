@@ -1,16 +1,61 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { LoginPage } from './pages/LoginPage/LoginPage'
-import './App.css'
+import { Navigate, Route, Routes } from "react-router-dom";
+import { LandingPage } from "./pages/LandingPage/LandingPage";
+import { HomePage } from "./pages/HomePage/HomePage";
+import { LoginPage } from "./pages/LoginPage/LoginPage";
+import { ProfileAvatarPage } from "./pages/ProfileAvatarPage/ProfileAvatarPage";
+import { SignupPage } from "./pages/SignupPage/SignupPage";
+import { AuthRoute } from "./routes/AuthRoute";
+import { ProtectedRoute } from "./routes/ProtectedRoute";
+import "./App.css";
 
 function App() {
-  return (
-    <main className="app-shell">
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </main>
-  )
+    return (
+        <main className="app-shell">
+            <Routes>
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute>
+                            <HomePage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/auth"
+                    element={
+                        <AuthRoute>
+                            <LandingPage />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/auth/login"
+                    element={
+                        <AuthRoute>
+                            <LoginPage />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/auth/signup"
+                    element={
+                        <AuthRoute authenticatedRedirectTo="/profile/avatar">
+                            <SignupPage />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/profile/avatar"
+                    element={
+                        <ProtectedRoute>
+                            <ProfileAvatarPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route path="*" element={<Navigate to="/auth" replace />} />
+            </Routes>
+        </main>
+    );
 }
 
-export default App
+export default App;

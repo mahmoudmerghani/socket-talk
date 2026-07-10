@@ -1,0 +1,29 @@
+.avatar {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(215, 228, 239, 0.12);
+  border-radius: 999px;
+  background: var(--avatar-bg, var(--surface-soft));
+  color: var(--avatar-fg, var(--text));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 16px rgba(3, 8, 12, 0.18);
+  user-select: none;
+}
+
+.avatar__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.avatar__initials {
+  font-size: calc(var(--avatar-size) * 0.38);
+  font-weight: 700;
+  line-height: 1;
+}
