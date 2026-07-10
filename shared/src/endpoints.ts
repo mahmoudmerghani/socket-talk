@@ -6,7 +6,7 @@ type ResError = {
     error: string;
 };
 
-type User = Jsonify<{
+export type User = Jsonify<{
     displayName: string;
     username: string;
     email: string | null;
@@ -14,6 +14,7 @@ type User = Jsonify<{
     isVerified: boolean;
     avatarColor: string;
     avatarUrl: string | null;
+    avatarPath: string | null;
     createdAt: Date;
 }>;
 
@@ -29,5 +30,13 @@ export type Endpoints = {
 
     "/auth/signup": {
         POST: Bodies<SignupRequest, User | ResError>;
+    };
+
+    "auth/me": {
+        GET: Bodies<never, User | ResError>;
+    };
+
+    "/users/me/avatar": {
+        PATCH: Bodies<never, { publicUrl: string }>;
     };
 };
