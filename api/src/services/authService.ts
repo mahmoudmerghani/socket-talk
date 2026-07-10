@@ -153,7 +153,7 @@ export async function getGithubUser(code: string) {
         headers: {
             Authorization: `Bearer ${body.access_token}`,
         },
-    });
+    });2
 
     if (!userRes.ok) {
         throw err;
