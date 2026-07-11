@@ -153,7 +153,8 @@ export async function getGithubUser(code: string) {
         headers: {
             Authorization: `Bearer ${body.access_token}`,
         },
-    });2
+    });
+    2;
 
     if (!userRes.ok) {
         throw err;
@@ -224,11 +225,21 @@ export async function signupWithGithub(
 ) {
     // user provided data have priority over prefilled github data except email (verified by github)
 
+    const chosenEmail = userGithubData.email ?? userSignupData.email ?? null;
+
+    const exist =
+        (chosenEmail && (await userService.getUserByEmail(chosenEmail))) ||
+        (await userService.getUserByUsername(userSignupData.username));
+
+    if (exist) {
+        throw new HttpError(409, "User already exists");
+    }
+
     const user = await userService.createUser({
         displayName: userSignupData.displayName,
         username: userSignupData.username,
         avatarUrl: userGithubData.avatarUrl,
-        email: userGithubData.email ?? userSignupData.email ?? null,
+        email: chosenEmail,
         isVerified: userGithubData.email !== null,
     });
 
