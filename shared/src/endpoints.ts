@@ -32,11 +32,15 @@ export type Endpoints = {
         POST: Bodies<SignupRequest, User | ResError>;
     };
 
+    "/auth/logout": {
+        POST: Bodies<never, void | ResError>
+    }
+
     "/auth/me": {
         GET: Bodies<never, User | ResError>;
     };
 
     "/users/me/avatar": {
-        PATCH: Bodies<FormData, { publicUrl: string }>;
+        PATCH: Bodies<FormData, { publicUrl: string } | ResError>;
     };
 };
