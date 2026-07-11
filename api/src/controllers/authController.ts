@@ -28,7 +28,7 @@ export const logout: RequestHandler = async (req, res) => {
     await authService.logoutUser(req.cookies.sid);
     res.clearCookie("sid");
 
-    res.end();
+    res.status(204).end();
 };
 
 export const signup: RequestHandler = async (req, res) => {
