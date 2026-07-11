@@ -67,6 +67,10 @@ export const api: Api = async (path, init) => {
             };
         }
 
+        if (res.status === 204) {
+            return;
+        }
+
         return await res.json();
     } catch (e) {
         console.error(e);

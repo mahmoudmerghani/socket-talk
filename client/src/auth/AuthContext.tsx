@@ -24,6 +24,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const clearAuthenticatedUser = () => {
         setUser(null);
+        void api("/auth/logout", {
+            method: "POST",
+        });
     };
 
     useEffect(() => {

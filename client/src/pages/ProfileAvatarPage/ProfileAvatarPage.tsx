@@ -3,13 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
+import { api } from "../../api/api";
 import "./ProfileAvatarPage.css";
+
+function ErrorMessage({ message }: { message: string }) {
+    return <p className="error-message">{message}</p>;
+}
 
 export function ProfileAvatarPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, setAuthenticatedUser } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
         return () => {
@@ -34,6 +42,9 @@ export function ProfileAvatarPage() {
             return;
         }
 
+        setSelectedFile(file);
+        setErrorMessage("");
+
         setPreviewUrl((currentPreviewUrl) => {
             if (currentPreviewUrl) {
                 URL.revokeObjectURL(currentPreviewUrl);
@@ -47,6 +58,37 @@ export function ProfileAvatarPage() {
         navigate("/", { replace: true });
     };
 
+    const handleContinue = async () => {
+        if (!selectedFile) {
+            goHome();
+            return;
+        }
+
+        setIsLoading(true);
+        setErrorMessage("");
+
+        const formData = new FormData();
+        formData.append("avatar", selectedFile);
+
+        const response = await api("/users/me/avatar", {
+            method: "PATCH",
+            body: formData,
+        });
+
+        if ("error" in response) {
+            setErrorMessage(response.error);
+            setIsLoading(false);
+            return;
+        }
+
+        setAuthenticatedUser({
+            ...user,
+            avatarUrl: response.publicUrl,
+        });
+        setIsLoading(false);
+        navigate("/", { replace: true });
+    };
+
     return (
         <section className="profile-avatar-page" aria-label="Choose avatar image">
             <div className="profile-avatar-page__brand">
@@ -54,6 +96,8 @@ export function ProfileAvatarPage() {
             </div>
 
             <div className="profile-avatar-panel">
+                {errorMessage ? <ErrorMessage message={errorMessage} /> : null}
+
                 <div className="profile-avatar-preview">
                     <Avatar
                         displayName={user.displayName}
@@ -74,16 +118,18 @@ export function ProfileAvatarPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
+                    disabled={isLoading}
                 />
 
                 <div className="profile-avatar-actions">
-                    <button type="button" onClick={handleChooseImage}>
+                    <button type="button" onClick={handleChooseImage} disabled={isLoading}>
                         Choose Image
                     </button>
                     <button
                         type="button"
                         className="profile-avatar-actions__secondary"
                         onClick={goHome}
+                        disabled={isLoading}
                     >
                         Skip
                     </button>
@@ -93,9 +139,10 @@ export function ProfileAvatarPage() {
                     <button
                         type="button"
                         className="profile-avatar-continue"
-                        onClick={goHome}
+                        onClick={handleContinue}
+                        disabled={isLoading}
                     >
-                        Continue
+                        {isLoading ? "Saving..." : "Continue"}
                     </button>
                 ) : null}
             </div>
