@@ -225,13 +225,24 @@ export async function signupWithGithub(
 ) {
     // user provided data have priority over prefilled github data except email (verified by github)
 
-    const chosenEmail = userGithubData.email ?? userSignupData.email ?? null;
+    if (await userService.getUserByUsername(userSignupData.username)) {
+        throw new HttpError(409, "User already exists");
+    }
 
-    const exist =
-        (chosenEmail && (await userService.getUserByEmail(chosenEmail))) ||
-        (await userService.getUserByUsername(userSignupData.username));
+    let chosenEmail = userGithubData.email;
 
-    if (exist) {
+    if (
+        chosenEmail === null ||
+        (await userService.getUserByEmail(chosenEmail))
+    ) {
+        chosenEmail = userSignupData.email || null;
+    }
+
+    if (
+        chosenEmail &&
+        chosenEmail !== userGithubData.email &&
+        (await userService.getUserByEmail(chosenEmail))
+    ) {
         throw new HttpError(409, "User already exists");
     }
 
@@ -240,7 +251,7 @@ export async function signupWithGithub(
         username: userSignupData.username,
         avatarUrl: userGithubData.avatarUrl,
         email: chosenEmail,
-        isVerified: userGithubData.email !== null,
+        isVerified: chosenEmail !== null && chosenEmail === userGithubData.email,
     });
 
     await userService.createOauthAccount({
