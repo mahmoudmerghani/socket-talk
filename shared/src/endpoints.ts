@@ -1,4 +1,4 @@
-import type { LoginRequest, SignupRequest } from "./schemas/authSchemas.js";
+import type { LoginRequest, SignupRequest, GithubSignupRequest } from "./schemas/authSchemas.js";
 import type { Jsonify } from "type-fest";
 
 type ResError = {
@@ -18,6 +18,14 @@ export type User = Jsonify<{
     createdAt: Date;
 }>;
 
+type GithubPendingSignupData = {
+    id: number;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string;
+    email: string | null;
+};
+
 export type Bodies<Request, Response> = {
     requestBody: Request;
     responseBody: Response;
@@ -33,11 +41,16 @@ export type Endpoints = {
     };
 
     "/auth/logout": {
-        POST: Bodies<never, void | ResError>
-    }
+        POST: Bodies<never, void | ResError>;
+    };
 
     "/auth/me": {
         GET: Bodies<never, User | ResError>;
+    };
+
+    "/github/pending-signup": {
+        GET: Bodies<never, GithubPendingSignupData | ResError>;
+        POST: Bodies<GithubSignupRequest, User | ResError>
     };
 
     "/users/me/avatar": {
