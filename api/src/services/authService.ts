@@ -8,6 +8,10 @@ import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
+import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared/endpoints.js";
+import type { Prisma } from "../../generated/prisma/client.js";
+
+type DBClient = typeof prisma | Prisma.TransactionClient;
 
 export async function signupUser(userData: SignupRequest) {
     const exist =
@@ -21,26 +25,32 @@ export async function signupUser(userData: SignupRequest) {
 
     const hashedPassword = await hash(userData.password, 10);
 
-    // this may error (excess property passwordConfirm)
-    const user = await userService.createUser({
-        displayName: userData.displayName,
-        username: userData.username,
-        password: hashedPassword,
-        email: userData.email || null,
-    });
+    const { user, session } = await prisma.$transaction(async (tx) => {
+        const user = await userService.createUser({
+            displayName: userData.displayName,
+            username: userData.username,
+            password: hashedPassword,
+            email: userData.email || null,
+        }, tx);
 
-    const session = await createUserSession(user.id);
+        const session = await createUserSession(user.id, tx);
+
+        return { user, session };
+    });
 
     const { password: _, ...userWithoutPassword } = user;
 
     return { session, user: userWithoutPassword };
 }
 
-export async function createUserSession(userId: number) {
+export async function createUserSession(
+    userId: number,
+    dbClient: DBClient = prisma,
+) {
     const randomId = randomBytes(16).toString("hex");
     const expireDate = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    const session = await prisma.session.create({
+    const session = await dbClient.session.create({
         data: {
             id: randomId,
             expiresAt: new Date(expireDate),
@@ -140,12 +150,14 @@ export async function getGithubUser(code: string) {
     });
 
     if (!res.ok) {
+        console.error(await res.text());
         throw err;
     }
 
     const body = (await res.json()) as Record<string, unknown>;
 
     if (!("access_token" in body)) {
+        console.error(body);
         throw err;
     }
 
@@ -157,6 +169,7 @@ export async function getGithubUser(code: string) {
     2;
 
     if (!userRes.ok) {
+        console.error(await userRes.text());
         throw err;
     }
 
@@ -174,6 +187,7 @@ export async function getGithubUser(code: string) {
     });
 
     if (!emailRes.ok) {
+        console.error(await emailRes.text());
         throw err;
     }
 
@@ -244,7 +258,7 @@ export async function signupWithGithub(
                 409,
                 "User already exists",
                 githubEmail === userEmail
-                    ? "GITHUB_EMAIL_DUPLICATE"
+                    ? EMAIL_FAILURE_GITHUB_CODE
                     : undefined,
             );
         } else {
@@ -254,21 +268,31 @@ export async function signupWithGithub(
         chosenEmail = null;
     }
 
-    const user = await userService.createUser({
-        displayName: userSignupData.displayName,
-        username: userSignupData.username,
-        avatarUrl: userGithubData.avatarUrl,
-        email: chosenEmail,
-        isVerified: chosenEmail !== null && chosenEmail === githubEmail,
-    });
+    const { session, user } = await prisma.$transaction(async (tx) => {
+        const user = await userService.createUser(
+            {
+                displayName: userSignupData.displayName,
+                username: userSignupData.username,
+                avatarUrl: userGithubData.avatarUrl,
+                email: chosenEmail,
+                isVerified: chosenEmail !== null && chosenEmail === githubEmail,
+            },
+            tx,
+        );
 
-    await userService.createOauthAccount({
-        provider: "GITHUB",
-        providerId: userGithubData.id.toString(),
-        userId: user.id,
-    });
+        await userService.createOauthAccount(
+            {
+                provider: "GITHUB",
+                providerId: userGithubData.id.toString(),
+                userId: user.id,
+            },
+            tx,
+        );
 
-    const session = await createUserSession(user.id);
+        const session = await createUserSession(user.id, tx);
+
+        return { session, user };
+    });
 
     const { password: _, ...userWithoutPassword } = user;
 

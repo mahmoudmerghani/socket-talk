@@ -6,6 +6,8 @@ import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { supabase } from "../../lib/supabase.js";
 
+type DBClient = typeof prisma | Prisma.TransactionClient;
+
 export async function getUserByEmail(email: string) {
     const user = await prisma.user.findUnique({
         where: {
@@ -38,11 +40,12 @@ export async function getUserByEmailOrUsername(identifier: string) {
 
 export async function createUser(
     user: Omit<Prisma.UserCreateInput, "avatarColor">,
+    dbClient: DBClient = prisma,
 ) {
     const avatarColor =
         AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]!;
 
-    const newUser = await prisma.user.create({
+    const newUser = await dbClient.user.create({
         data: { ...user, avatarColor: avatarColor },
     });
 
@@ -51,8 +54,9 @@ export async function createUser(
 
 export async function createOauthAccount(
     data: Prisma.OauthAccountUncheckedCreateInput,
+    dbClient: DBClient = prisma,
 ) {
-    const account = await prisma.oauthAccount.create({
+    const account = await dbClient.oauthAccount.create({
         data,
     });
 

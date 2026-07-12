@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import * as authService from "../services/authService.js";
-import { OAUTH_FAILURE_GITHUB_CODE } from "@socket-talk/shared/schemas/authSchemas.js";
+import { OAUTH_FAILURE_GITHUB_CODE } from "@socket-talk/shared/endpoints.js";
 import { HttpError } from "../utils/HttpError.js";
 
 const isProduction = process.env.NODE_ENV === "production";
