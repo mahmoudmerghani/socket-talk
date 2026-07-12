@@ -4,6 +4,7 @@ import { HomePage } from "./pages/HomePage/HomePage";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
 import { ProfileAvatarPage } from "./pages/ProfileAvatarPage/ProfileAvatarPage";
 import { SignupPage } from "./pages/SignupPage/SignupPage";
+import { GithubPendingSignupPage } from "./pages/GithubPendingSignupPage/GithubPendingSignupPage";
 import { AuthRoute } from "./routes/AuthRoute";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import "./App.css";
@@ -41,6 +42,14 @@ function App() {
                     element={
                         <AuthRoute authenticatedRedirectTo="/profile/avatar">
                             <SignupPage />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/auth/github/pending-signup"
+                    element={
+                        <AuthRoute authenticatedRedirectTo="/profile/avatar">
+                            <GithubPendingSignupPage />
                         </AuthRoute>
                     }
                 />

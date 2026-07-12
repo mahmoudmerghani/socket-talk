@@ -1,0 +1,125 @@
+.github-pending-signup-page {
+  min-height: 100svh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+}
+
+.github-pending-signup-page__brand {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 2;
+}
+
+.github-pending-signup-panel {
+  width: min(100%, 430px);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(34, 50, 65, 0.92), rgba(24, 34, 45, 0.96));
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow:
+    0 24px 40px rgba(3, 8, 12, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.github-pending-signup-panel h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0.45rem 0 1.4rem;
+  color: var(--text-soft);
+}
+
+.github-pending-signup-form {
+  display: grid;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.github-pending-signup-form label {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.field-optional {
+  opacity: 0.8;
+}
+
+.github-pending-signup-form input {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.78rem 0.9rem;
+  font: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.github-pending-signup-form input::placeholder {
+  color: #6d8598;
+}
+
+.github-pending-signup-form input:focus:not(.input-readonly) {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(73, 169, 234, 0.16);
+}
+
+.github-pending-signup-form input.input-readonly {
+  background: var(--bg-1);
+  border-color: var(--border);
+  color: var(--text-soft);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.github-pending-signup-form button {
+  margin-top: 1.25rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  color: #08263d;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.82rem 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.github-pending-signup-form button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.55);
+  transform: none;
+}
+
+.github-pending-signup-form button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.github-pending-signup-form button:disabled:hover {
+  transform: none;
+  filter: saturate(0.55);
+}
+
+.github-pending-signup-form button:active {
+  transform: translateY(0);
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 112, 112, 0.4);
+  background: rgba(116, 28, 39, 0.35);
+  color: #ffb7bf;
+  font-size: 0.92rem;
+  white-space: pre-line;
+  text-align: left;
+}

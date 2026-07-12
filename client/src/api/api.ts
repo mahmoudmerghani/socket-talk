@@ -22,14 +22,14 @@ type Api = <
     path: Path,
     init: Body["requestBody"] extends never
         ? {
-              method: Method;
-              headers?: Record<string, string>;
-          }
+            method: Method;
+            headers?: Record<string, string>;
+        }
         : {
-              method: Method;
-              body: Body["requestBody"];
-              headers?: Record<string, string>;
-          },
+            method: Method;
+            body: Body["requestBody"];
+            headers?: Record<string, string>;
+        },
 ) => Promise<Body["responseBody"]>;
 
 export const api: Api = async (path, init) => {
@@ -61,9 +61,11 @@ export const api: Api = async (path, init) => {
         }
 
         if (!res.ok) {
+            const body = await res.json();
             return {
-                error: (await res.json()).error,
+                error: body.error,
                 status: res.status,
+                ...(body.code !== undefined ? { code: body.code } : {}),
             };
         }
 
