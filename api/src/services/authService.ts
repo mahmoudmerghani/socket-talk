@@ -8,6 +8,7 @@ import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
+import { email } from "zod";
 
 export async function signupUser(userData: SignupRequest) {
     const exist =
@@ -228,22 +229,24 @@ export async function signupWithGithub(
     if (await userService.getUserByUsername(userSignupData.username)) {
         throw new HttpError(409, "User already exists");
     }
+    
+    let chosenEmail: string | null;
+    const githubEmail = userGithubData.email;
+    const userEmail = userSignupData.email;
 
-    let chosenEmail = userGithubData.email;
-
-    if (
-        chosenEmail === null ||
-        (await userService.getUserByEmail(chosenEmail))
-    ) {
-        chosenEmail = userSignupData.email || null;
-    }
-
-    if (
-        chosenEmail &&
-        chosenEmail !== userGithubData.email &&
-        (await userService.getUserByEmail(chosenEmail))
-    ) {
-        throw new HttpError(409, "User already exists");
+    if (githubEmail && !(await userService.getUserByEmail(githubEmail))) {
+        chosenEmail = githubEmail;
+    } else if (userEmail) {
+        if (
+            githubEmail === userEmail ||
+            (await userService.getUserByEmail(userEmail))
+        ) {
+            throw new HttpError(409, "User already exists");
+        } else {
+            chosenEmail = userEmail;
+        }
+    } else {
+        chosenEmail = null;
     }
 
     const user = await userService.createUser({
@@ -251,7 +254,7 @@ export async function signupWithGithub(
         username: userSignupData.username,
         avatarUrl: userGithubData.avatarUrl,
         email: chosenEmail,
-        isVerified: chosenEmail !== null && chosenEmail === userGithubData.email,
+        isVerified: chosenEmail !== null && chosenEmail === githubEmail,
     });
 
     await userService.createOauthAccount({
