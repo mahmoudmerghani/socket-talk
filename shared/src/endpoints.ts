@@ -1,9 +1,14 @@
-import type { LoginRequest, SignupRequest, GithubSignupRequest } from "./schemas/authSchemas.js";
+import type {
+    LoginRequest,
+    SignupRequest,
+    GithubSignupRequest,
+} from "./schemas/authSchemas.js";
 import type { Jsonify } from "type-fest";
 
 type ResError = {
     status: number;
     error: string;
+    code?: string;
 };
 
 export type User = Jsonify<{
@@ -48,12 +53,15 @@ export type Endpoints = {
         GET: Bodies<never, User | ResError>;
     };
 
-    "/github/pending-signup": {
+    "/auth/github/pending-signup": {
         GET: Bodies<never, GithubPendingSignupData | ResError>;
-        POST: Bodies<GithubSignupRequest, User | ResError>
+        POST: Bodies<GithubSignupRequest, User | ResError>;
     };
 
     "/users/me/avatar": {
         PATCH: Bodies<FormData, { publicUrl: string } | ResError>;
     };
 };
+
+export const OAUTH_FAILURE_GITHUB_CODE = "OAUTH_GITHUB_FAILED";
+export const EMAIL_FAILURE_GITHUB_CODE = "GITHUB_EMAIL_DUPLICATE";

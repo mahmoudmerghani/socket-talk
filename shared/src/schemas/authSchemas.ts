@@ -68,4 +68,3 @@ export const AVATAR_COLORS = [
     "red",
 ] as const;
 
-export const OAUTH_FAILURE_GITHUB_CODE = "oauth_github_failed";
