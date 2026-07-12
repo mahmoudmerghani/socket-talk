@@ -8,7 +8,6 @@ import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
-import { email } from "zod";
 
 export async function signupUser(userData: SignupRequest) {
     const exist =
@@ -229,7 +228,7 @@ export async function signupWithGithub(
     if (await userService.getUserByUsername(userSignupData.username)) {
         throw new HttpError(409, "User already exists");
     }
-    
+
     let chosenEmail: string | null;
     const githubEmail = userGithubData.email;
     const userEmail = userSignupData.email;
@@ -241,7 +240,13 @@ export async function signupWithGithub(
             githubEmail === userEmail ||
             (await userService.getUserByEmail(userEmail))
         ) {
-            throw new HttpError(409, "User already exists");
+            throw new HttpError(
+                409,
+                "User already exists",
+                githubEmail === userEmail
+                    ? "GITHUB_EMAIL_DUPLICATE"
+                    : undefined,
+            );
         } else {
             chosenEmail = userEmail;
         }
