@@ -15,7 +15,7 @@ export function removeResponseHandler(handler: ResponseHandler) {
 }
 
 type Api = <
-    Path extends keyof Endpoints,
+    Path extends keyof Endpoints & string,
     Method extends keyof Endpoints[Path] & string,
     Body extends Endpoints[Path][Method] & Bodies<unknown, unknown>,
 >(
