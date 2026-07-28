@@ -20,18 +20,21 @@ model Session {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  username      String         @unique
-  password      String?
-  displayName   String
-  email         String?        @unique
-  isVerified    Boolean        @default(false)
-  avatarColor   String
-  avatarUrl     String?
-  avatarPath    String?
-  createdAt     DateTime       @default(now())
-  sessions      Session[]
-  oauthAccounts OauthAccount[]
+  id                      Int                       @id @default(autoincrement())
+  username                String                    @unique
+  password                String?
+  displayName             String
+  email                   String?                   @unique
+  isVerified              Boolean                   @default(false)
+  avatarColor             String
+  avatarUrl               String?
+  avatarPath              String?
+  createdAt               DateTime                  @default(now())
+  sessions                Session[]
+  oauthAccounts           OauthAccount[]
+  messages                Message[]
+  createdGroups           Group[]
+  conversationMemberships ConversationParticipant[]
 }
 
 enum OauthProvider {
@@ -45,4 +48,52 @@ model OauthAccount {
   user       User          @relation(fields: [userId], references: [id])
 
   @@id([providerId, provider])
+}
+
+model Message {
+  id                  Int                       @id @default(autoincrement())
+  content             String
+  sentAt              DateTime                  @default(now())
+  senderId            Int
+  sender              User                      @relation(fields: [senderId], references: [id])
+  conversationId      Int
+  conversation        Conversation              @relation(fields: [conversationId], references: [id])
+  lastReadParticipant ConversationParticipant[]
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+model Conversation {
+  id           Int                       @id @default(autoincrement())
+  type         ConversationType
+  messages     Message[]
+  group        Group?
+  participants ConversationParticipant[]
+}
+
+model ConversationParticipant {
+  userId            Int
+  conversationId    Int
+  user              User         @relation(fields: [userId], references: [id])
+  conversation      Conversation @relation(fields: [conversationId], references: [id])
+  lastReadMessageId Int?
+  lastReadMessage   Message?     @relation(fields: [lastReadMessageId], references: [id])
+  joinedAt          DateTime     @default(now())
+
+  @@id([userId, conversationId])
+}
+
+model Group {
+  name           String
+  avatarColor    String
+  avatarUrl      String?
+  avatarPath     String?
+  createdAt      DateTime     @default(now())
+  creatorId      Int
+  creator        User         @relation(fields: [creatorId], references: [id])
+  conversationId Int          @id
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
 }
