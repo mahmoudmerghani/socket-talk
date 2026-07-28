@@ -68,6 +68,7 @@ enum ConversationType {
 
 model Conversation {
   id           Int                       @id @default(autoincrement())
+  createdAt    DateTime                  @default(now())
   type         ConversationType
   messages     Message[]
   group        Group?
@@ -91,7 +92,6 @@ model Group {
   avatarColor    String
   avatarUrl      String?
   avatarPath     String?
-  createdAt      DateTime     @default(now())
   creatorId      Int
   creator        User         @relation(fields: [creatorId], references: [id])
   conversationId Int          @id
