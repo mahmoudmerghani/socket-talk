@@ -5,6 +5,8 @@ import { HttpError } from "../utils/HttpError.js";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { supabase } from "../../lib/supabase.js";
+import { withTransaction } from "../utils/withTransaction.js";
+import { addUserToGroup } from "./conversationService.js";
 
 type DBClient = typeof prisma | Prisma.TransactionClient;
 
@@ -40,16 +42,20 @@ export async function getUserByEmailOrUsername(identifier: string) {
 
 export async function createUser(
     user: Omit<Prisma.UserCreateInput, "avatarColor">,
-    dbClient: DBClient = prisma,
+    tx?: Prisma.TransactionClient,
 ) {
-    const avatarColor =
-        AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]!;
+    return withTransaction(tx, async (tx) => {
+        const avatarColor =
+            AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]!;
 
-    const newUser = await dbClient.user.create({
-        data: { ...user, avatarColor: avatarColor },
+        const newUser = await tx.user.create({
+            data: { ...user, avatarColor: avatarColor },
+        });
+
+        await addUserToGroup(newUser.id, 0, tx); // 0 is the id of the global group
+
+        return newUser;
     });
-
-    return newUser;
 }
 
 export async function createOauthAccount(
