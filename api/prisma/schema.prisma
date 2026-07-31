@@ -35,6 +35,9 @@ model User {
   messages                Message[]
   createdGroups           Group[]
   conversationMemberships ConversationParticipant[]
+  DM1                     DM[]                      @relation("user1")
+  DM2                     DM[]                      @relation("user2")
+  selfChat                SelfChat?
 }
 
 enum OauthProvider {
@@ -64,6 +67,7 @@ model Message {
 enum ConversationType {
   DIRECT
   GROUP
+  SELF
 }
 
 model Conversation {
@@ -71,8 +75,10 @@ model Conversation {
   createdAt    DateTime                  @default(now())
   type         ConversationType
   messages     Message[]
-  group        Group?
   participants ConversationParticipant[]
+  group        Group?
+  DM           DM?
+  selfChat     SelfChat?
 }
 
 model ConversationParticipant {
@@ -88,12 +94,31 @@ model ConversationParticipant {
 }
 
 model Group {
+  conversationId Int          @id
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
   name           String
   avatarColor    String
   avatarUrl      String?
   avatarPath     String?
   creatorId      Int
   creator        User         @relation(fields: [creatorId], references: [id])
+}
+
+model DM {
   conversationId Int          @id
   conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId1        Int
+  userId2        Int
+  user1          User         @relation(fields: [userId1], references: [id], name: "user1")
+  user2          User         @relation(fields: [userId2], references: [id], name: "user2")
+
+  // user1 < user2 should hold to remove order
+  @@unique([userId1, userId2])
+}
+
+model SelfChat {
+  conversationId Int          @id
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId         Int          @unique
+  user           User         @relation(fields: [userId], references: [id])
 }
