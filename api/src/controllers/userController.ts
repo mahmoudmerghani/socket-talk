@@ -1,10 +1,9 @@
 import type { RequestHandler } from "express";
-import * as userService from "../services/userService.js";
+import { updateUserAvatar } from "../services/imageService.js";
 
 export const updateAvatar: RequestHandler = async (req, res) => {
-    const result = await userService.updateAvatar(
+    const result = await updateUserAvatar(
         req.user.id,
-        req.user.avatarPath,
         req.file!.buffer,
     );
 

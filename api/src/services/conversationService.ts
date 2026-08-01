@@ -55,6 +55,7 @@ export async function addUserToGroup(
 
 export async function getDM(userId1: number, userId2: number) {
     // order ids
+
     const [id1, id2] =
         userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
 
@@ -81,7 +82,9 @@ export async function createDM(
         throw new HttpError(409, "DM already exists");
     }
 
-    // order ids
+    // order ids to guarantee that no other DM exists with the reverse order
+    // which can create a duplicate DM with the same two users
+
     const [id1, id2] =
         userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
 
@@ -156,5 +159,19 @@ export async function createSelfChat(
         });
 
         return { conversation, selfChat };
+    });
+}
+
+export async function getConversationParticipant(
+    userId: number,
+    conversationId: number,
+) {
+    return prisma.conversationParticipant.findUnique({
+        where: {
+            userId_conversationId: {
+                conversationId,
+                userId,
+            },
+        },
     });
 }
