@@ -57,11 +57,14 @@ model Message {
   id                  Int                       @id @default(autoincrement())
   content             String
   sentAt              DateTime                  @default(now())
+  sequenceNumber      Int
   senderId            Int
-  sender              User                      @relation(fields: [senderId], references: [id])
   conversationId      Int
+  sender              User                      @relation(fields: [senderId], references: [id])
   conversation        Conversation              @relation(fields: [conversationId], references: [id])
   lastReadParticipant ConversationParticipant[]
+
+  @@unique([conversationId, sequenceNumber])
 }
 
 enum ConversationType {
@@ -71,14 +74,15 @@ enum ConversationType {
 }
 
 model Conversation {
-  id           Int                       @id @default(autoincrement())
-  createdAt    DateTime                  @default(now())
-  type         ConversationType
-  messages     Message[]
-  participants ConversationParticipant[]
-  group        Group?
-  DM           DM?
-  selfChat     SelfChat?
+  id              Int                       @id @default(autoincrement())
+  createdAt       DateTime                  @default(now())
+  type            ConversationType
+  sequenceCounter Int                       @default(0)
+  messages        Message[]
+  participants    ConversationParticipant[]
+  group           Group?
+  DM              DM?
+  selfChat        SelfChat?
 }
 
 model ConversationParticipant {
