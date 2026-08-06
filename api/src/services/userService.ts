@@ -2,7 +2,7 @@ import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { AVATAR_COLORS } from "@socket-talk/shared/schemas/authSchemas.js";
 import { withTransaction } from "../utils/withTransaction.js";
-import { addUserToGroup } from "./conversationService.js";
+import { addUserToGroup, createSelfChat } from "./conversationService.js";
 
 type DBClient = typeof prisma | Prisma.TransactionClient;
 
@@ -50,6 +50,8 @@ export async function createUser(
 
         await addUserToGroup(newUser.id, 0, tx); // 0 is the id of the global group
 
+        await createSelfChat(newUser.id, tx);
+
         return newUser;
     });
 }
@@ -64,4 +66,3 @@ export async function createOauthAccount(
 
     return account;
 }
-

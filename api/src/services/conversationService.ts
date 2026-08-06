@@ -5,6 +5,49 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 
+export type Conversation =
+    | {
+          id: number;
+          type: "DIRECT";
+          unreadMessagesCount: number;
+          lastMessage: {
+              senderId: number;
+              senderName: string;
+              content: string;
+              sentAt: Date;
+          } | null;
+          otherUser: {
+              id: number;
+              displayName: string;
+              avatarColor: string;
+              avatarUrl: string | null;
+          };
+      }
+    | {
+          id: number;
+          type: "GROUP";
+          unreadMessagesCount: number;
+          lastMessage: {
+              senderId: number;
+              senderName: string;
+              content: string;
+              sentAt: Date;
+          } | null;
+          group: {
+              name: string;
+              avatarColor: string;
+              avatarUrl: string | null;
+          };
+      }
+    | {
+          id: number;
+          type: "SELF";
+          lastMessage: {
+              content: string;
+              sentAt: Date;
+          } | null;
+      };
+
 export async function createGroup(
     userId: number,
     groupData: CreateGroupRequest,
@@ -174,4 +217,153 @@ export async function getConversationParticipant(
             },
         },
     });
+}
+
+export async function getAllUserConversations(userId: number) {
+    const conversations = await prisma.conversationParticipant.findMany({
+        where: {
+            userId,
+        },
+        select: {
+            lastReadMessage: true,
+            conversation: {
+                select: {
+                    id: true,
+                    type: true,
+                    sequenceCounter: true,
+                    DM: {
+                        select: {
+                            user1: true,
+                            user2: true,
+                        },
+                    },
+                    selfChat: true,
+                    group: true,
+                    messages: {
+                        select: {
+                            id: true,
+                            content: true,
+                            sentAt: true,
+                            sender: {
+                                select: {
+                                    id: true,
+                                    displayName: true,
+                                },
+                            },
+                        },
+                        orderBy: {
+                            sequenceNumber: "desc",
+                        },
+                        take: 1,
+                    },
+                },
+            },
+        },
+    });
+
+    const userConversations: Conversation[] = new Array(conversations.length);
+    let i = 0;
+
+    for (const c of conversations) {
+        const lastMessage = c.conversation.messages[0] ?? null;
+
+        const unreadMessagesCount =
+            c.lastReadMessage !== null
+                ? c.conversation.sequenceCounter -
+                  c.lastReadMessage.sequenceNumber -
+                  1
+                : c.conversation.sequenceCounter;
+
+        switch (c.conversation.type) {
+            case "DIRECT": {
+                const dm = c.conversation.DM;
+
+                if (!dm) {
+                    throw new Error(
+                        `Invalid DIRECT conversation ${c.conversation.id}: missing DM`,
+                    );
+                }
+
+                const otherUser = dm.user1.id === userId ? dm.user2 : dm.user1;
+
+                userConversations[i++] = {
+                    type: "DIRECT",
+                    id: c.conversation.id,
+                    unreadMessagesCount,
+                    lastMessage: lastMessage && {
+                        content: lastMessage.content,
+                        sentAt: lastMessage.sentAt,
+                        senderId: lastMessage.sender.id,
+                        senderName: lastMessage.sender.displayName,
+                    },
+                    otherUser: {
+                        id: otherUser.id,
+                        displayName: otherUser.displayName,
+                        avatarColor: otherUser.avatarColor,
+                        avatarUrl: otherUser.avatarUrl,
+                    },
+                };
+
+                break;
+            }
+
+            case "GROUP": {
+                const group = c.conversation.group;
+
+                if (!group) {
+                    throw new Error(
+                        `Invalid GROUP conversation ${c.conversation.id}: missing Group`,
+                    );
+                }
+
+                userConversations[i++] = {
+                    type: "GROUP",
+                    id: c.conversation.id,
+                    unreadMessagesCount,
+                    lastMessage: lastMessage && {
+                        content: lastMessage.content,
+                        sentAt: lastMessage.sentAt,
+                        senderId: lastMessage.sender.id,
+                        senderName: lastMessage.sender.displayName,
+                    },
+                    group: {
+                        name: group.name,
+                        avatarColor: group.avatarColor,
+                        avatarUrl: group.avatarUrl,
+                    },
+                };
+
+                break;
+            }
+
+            case "SELF": {
+                const selfChat = c.conversation.selfChat;
+
+                if (!selfChat) {
+                    throw new Error(
+                        `Invalid SELF conversation ${c.conversation.id}: missing Self chat`,
+                    );
+                }
+
+                userConversations[i++] = {
+                    type: "SELF",
+                    id: c.conversation.id,
+                    lastMessage: lastMessage && {
+                        content: lastMessage.content,
+                        sentAt: lastMessage.sentAt,
+                    },
+                };
+
+                break;
+            }
+        }
+    }
+
+    userConversations.sort(
+        (a, b) =>
+            (b.lastMessage?.sentAt.getTime() ?? 0) -
+            (a.lastMessage?.sentAt.getTime() ?? 0),
+    );
+
+    return userConversations;
 }
