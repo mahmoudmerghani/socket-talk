@@ -205,18 +205,25 @@ export async function createSelfChat(
     });
 }
 
-export async function getConversationParticipant(
+export async function requireConversationParticipant(
     userId: number,
     conversationId: number,
 ) {
-    return prisma.conversationParticipant.findUnique({
-        where: {
-            userId_conversationId: {
-                conversationId,
-                userId,
+    const conversationParticipant =
+        await prisma.conversationParticipant.findUnique({
+            where: {
+                userId_conversationId: {
+                    conversationId,
+                    userId,
+                },
             },
-        },
-    });
+        });
+
+    if (!conversationParticipant) {
+        throw new HttpError(403, "Forbidden");
+    }
+
+    return conversationParticipant;
 }
 
 export async function getAllUserConversations(userId: number) {
@@ -270,8 +277,7 @@ export async function getAllUserConversations(userId: number) {
         const unreadMessagesCount =
             c.lastReadMessage !== null
                 ? c.conversation.sequenceCounter -
-                  c.lastReadMessage.sequenceNumber -
-                  1
+                  c.lastReadMessage.sequenceNumber
                 : c.conversation.sequenceCounter;
 
         switch (c.conversation.type) {
