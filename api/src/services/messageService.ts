@@ -1,11 +1,10 @@
 import type { CreateMessageRequest } from "@socket-talk/shared/schemas/messageSchemas.js";
 import { prisma } from "../../lib/prisma.js";
-import { HttpError } from "../utils/HttpError.js";
 import { requireConversationParticipant } from "./conversationService.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 
-const MESSAGES_PAGE_SIZE = 50;
+export const MESSAGES_PAGE_SIZE = 50;
 
 export async function updateLastReadMessage(
     userId: number,
@@ -167,4 +166,39 @@ export async function getConversationMessagesAfterCursor(
     );
 
     return { messages, lastReadMessageId };
+}
+
+export async function getConversationMessagesAroundLastReadMessage(
+    userId: number,
+    conversationId: number,
+) {
+    const { lastReadMessage, conversation } =
+        await requireConversationParticipant(userId, conversationId);
+
+    let lowerBound: number;
+    let upperBound: number;
+
+    if (!lastReadMessage) {
+        // get the last page of messages in the conversation
+        const lastMessageSequence = conversation.sequenceCounter;
+
+        lowerBound = lastMessageSequence - MESSAGES_PAGE_SIZE + 1;
+        upperBound = lastMessageSequence;
+    } else {
+        // get messages around the last read message
+        const lastReadMessageSequence = lastReadMessage.sequenceNumber;
+
+        lowerBound =
+            lastReadMessageSequence - Math.floor(MESSAGES_PAGE_SIZE / 2) + 1;
+        upperBound =
+            lastReadMessageSequence + Math.floor(MESSAGES_PAGE_SIZE / 2);
+    }
+
+    const messages = await getConversationMessagesBetween(
+        conversationId,
+        lowerBound,
+        upperBound,
+    );
+
+    return { messages, lastReadMessageId: lastReadMessage?.id ?? null };
 }

@@ -205,6 +205,14 @@ export async function createSelfChat(
     });
 }
 
+export async function getConversation(conversationId: number) {
+    return prisma.conversation.findUnique({
+        where: {
+            id: conversationId,
+        },
+    });
+}
+
 export async function requireConversationParticipant(
     userId: number,
     conversationId: number,
@@ -216,6 +224,14 @@ export async function requireConversationParticipant(
                     conversationId,
                     userId,
                 },
+            },
+            select: {
+                userId: true,
+                conversationId: true,
+                joinedAt: true,
+                lastReadMessageId: true,
+                lastReadMessage: true,
+                conversation: true,
             },
         });
 
