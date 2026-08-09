@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { AVATAR_COLORS } from "@socket-talk/shared/schemas/authSchemas.js";
 import { type CreateGroupRequest } from "@socket-talk/shared/schemas/conversationSchemas.js";
-import type { Prisma } from "../../generated/prisma/client.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 
@@ -88,12 +88,30 @@ export async function addUserToGroup(
     conversationId: number,
     dbClient: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
-    await dbClient.conversationParticipant.create({
-        data: {
-            userId,
+    const group = await dbClient.group.findUnique({
+        where: {
             conversationId,
         },
     });
+
+    if (!group) {
+        throw new HttpError(404, "Not Found");
+    }
+
+    try {
+        await dbClient.conversationParticipant.create({
+            data: {
+                userId,
+                conversationId,
+            },
+        });
+    } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+            throw new HttpError(409, "User already in group");
+        }
+
+        throw err;
+    }
 }
 
 export async function getDM(userId1: number, userId2: number) {
@@ -388,4 +406,22 @@ export async function getAllUserConversations(userId: number) {
     );
 
     return userConversations;
+}
+
+export async function requireGroupAdmin(
+    userId: number,
+    conversationId: number,
+) {
+    const group = await prisma.group.findUnique({
+        where: {
+            conversationId,
+            creatorId: userId,
+        },
+    });
+
+    if (!group) {
+        throw new HttpError(403, "Forbidden");
+    }
+
+    return group;
 }

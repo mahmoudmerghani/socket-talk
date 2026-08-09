@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { supabase } from "../../lib/supabase.js";
 import { prisma } from "../../lib/prisma.js";
+import { requireGroupAdmin } from "./conversationService.js";
 
 type BucketName = "avatars" | "group-images";
 
@@ -88,15 +89,13 @@ export async function updateUserAvatar(userId: number, avatar: Buffer) {
     return { publicUrl, path };
 }
 
-export async function updateGroupImage(conversationId: number, image: Buffer) {
-    const { avatarPath: oldPath } = await prisma.group.findUniqueOrThrow({
-        where: {
-            conversationId,
-        },
-        select: {
-            avatarPath: true,
-        },
-    });
+export async function updateGroupImage(
+    userId: number,
+    conversationId: number,
+    image: Buffer,
+) {
+    const group = await requireGroupAdmin(userId, conversationId);
+    const { avatarPath: oldPath } = group;
 
     const path = `${conversationId}/${randomBytes(16).toString("hex")}.webp`;
     const { publicUrl } = await uploadAvatarImage(image, "group-images", path);
