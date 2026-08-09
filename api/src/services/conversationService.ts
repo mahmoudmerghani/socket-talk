@@ -174,7 +174,7 @@ export async function getDM(userId1: number, userId2: number) {
     });
 }
 
-export async function createDM(
+export async function getOrCreateDM(
     userId1: number,
     userId2: number,
     tx?: Prisma.TransactionClient,
@@ -183,8 +183,10 @@ export async function createDM(
         throw new HttpError(400, "Cannot create self DM");
     }
 
-    if (await getDM(userId1, userId2)) {
-        throw new HttpError(409, "DM already exists");
+    const existingDm = await getDM(userId1, userId2);
+
+    if (existingDm) {
+        return existingDm;
     }
 
     // order ids to guarantee that no other DM exists with the reverse order
@@ -222,7 +224,7 @@ export async function createDM(
             },
         });
 
-        return { conversation, DM };
+        return DM;
     });
 }
 

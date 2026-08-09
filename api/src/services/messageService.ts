@@ -1,6 +1,10 @@
 import type { CreateMessageRequest } from "@socket-talk/shared/schemas/messageSchemas.js";
 import { prisma } from "../../lib/prisma.js";
-import { requireConversationParticipant } from "./conversationService.js";
+import {
+    getDM,
+    getOrCreateDM,
+    requireConversationParticipant,
+} from "./conversationService.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 
@@ -27,7 +31,8 @@ export async function updateLastReadMessage(
     });
 }
 
-export async function sendMessage(
+// generic sendTo
+export async function sendMessageToConversation(
     senderId: number,
     conversationId: number,
     messageData: CreateMessageRequest,
@@ -58,6 +63,22 @@ export async function sendMessage(
 
         return message;
     });
+}
+
+export async function sendMessageToUser(
+    senderId: number,
+    receiverId: number,
+    messageData: CreateMessageRequest,
+    tx?: Prisma.TransactionClient,
+) {
+    const DM = await getOrCreateDM(senderId, receiverId);
+
+    return sendMessageToConversation(
+        senderId,
+        DM.conversationId,
+        messageData,
+        tx,
+    );
 }
 
 async function getConversationMessagesBetween(
