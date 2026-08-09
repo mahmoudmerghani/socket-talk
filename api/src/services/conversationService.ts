@@ -469,3 +469,31 @@ export async function requireGroupAdmin(
 
     return group;
 }
+
+export async function getConversationParticipants(
+    userId: number,
+    conversationId: number,
+) {
+    await requireConversationParticipant(userId, conversationId);
+
+    const result = await prisma.conversationParticipant.findMany({
+        where: {
+            conversationId,
+            NOT: { userId },
+        },
+        select: {
+            joinedAt: true,
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatarColor: true,
+                    avatarUrl: true,
+                },
+            },
+        },
+    });
+
+    return result.map((r) => ({ ...r.user, joinedAt: r.joinedAt }));
+}
