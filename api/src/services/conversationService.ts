@@ -106,12 +106,56 @@ export async function addUserToGroup(
             },
         });
     } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2002"
+        ) {
             throw new HttpError(409, "User already in group");
         }
 
         throw err;
     }
+}
+
+export async function addUserToGlobalGroup(
+    userId: number,
+    tx?: Prisma.TransactionClient,
+) {
+    return withTransaction(tx, async (tx) => {
+        // GLOBAL group is created by the seed file
+        const group = await tx.group.findFirst({
+            where: {
+                name: "GLOBAL",
+            },
+            orderBy: {
+                conversation: {
+                    createdAt: "asc",
+                },
+            },
+        });
+
+        if (!group) {
+            throw new Error("GLOBAL group was not created");
+        }
+
+        try {
+            await tx.conversationParticipant.create({
+                data: {
+                    userId,
+                    conversationId: group.conversationId,
+                },
+            });
+        } catch (err) {
+            if (
+                err instanceof Prisma.PrismaClientKnownRequestError &&
+                err.code === "P2002"
+            ) {
+                throw new HttpError(409, "User already in GLOBAL group");
+            }
+
+            throw err;
+        }
+    });
 }
 
 export async function getDM(userId1: number, userId2: number) {
