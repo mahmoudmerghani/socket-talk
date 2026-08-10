@@ -81,6 +81,20 @@ export async function sendMessageToUser(
     );
 }
 
+async function getConversationParticipantsLastReadMessageIds(
+    conversationId: number,
+) {
+    return prisma.conversationParticipant.findMany({
+        where: {
+            conversationId,
+        },
+        select: {
+            lastReadMessageId: true,
+            userId: true,
+        },
+    });
+}
+
 async function getConversationMessagesBetween(
     conversationId: number,
     lowerBoundCursor: number,
@@ -189,6 +203,7 @@ export async function getConversationMessagesAfterCursor(
     return { messages, lastReadMessageId };
 }
 
+// initial messages when user opens a conversation
 export async function getConversationMessagesAroundLastReadMessage(
     userId: number,
     conversationId: number,
@@ -215,11 +230,14 @@ export async function getConversationMessagesAroundLastReadMessage(
             lastReadMessageSequence + Math.floor(MESSAGES_PAGE_SIZE / 2);
     }
 
-    const messages = await getConversationMessagesBetween(
-        conversationId,
-        lowerBound,
-        upperBound,
-    );
+    const [messages, othersLastReadMessageIds] = await Promise.all([
+        getConversationMessagesBetween(conversationId, lowerBound, upperBound),
+        getConversationParticipantsLastReadMessageIds(conversationId),
+    ]);
 
-    return { messages, lastReadMessageId: lastReadMessage?.id ?? null };
+    return {
+        messages,
+        othersLastReadMessageIds,
+        lastReadMessageId: lastReadMessage?.id ?? null,
+    };
 }
