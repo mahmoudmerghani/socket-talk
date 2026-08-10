@@ -15,7 +15,7 @@ const avatarMaxSize = 2 * 1024 * 1024; // 2 MB
 userRouter.patch(
     "/me/avatar",
     uploadImage(avatarMaxSize, "avatar"),
-    handleMulterError,
+    handleMulterError(avatarMaxSize, "avatar"),
     userController.updateAvatar,
 );
 
