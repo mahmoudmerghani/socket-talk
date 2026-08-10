@@ -66,3 +66,58 @@ export async function createOauthAccount(
 
     return account;
 }
+
+export async function searchUsersByUsernameOrDisplayName(query: string) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return [];
+
+    const LIMIT = 20;
+    const select = {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarColor: true,
+        avatarUrl: true,
+    } as const;
+
+    // prefix matches have a higher ranking
+    const prefixMatches = await prisma.user.findMany({
+        where: {
+            OR: [
+                { username: { startsWith: trimmedQuery, mode: "insensitive" } },
+                {
+                    displayName: {
+                        startsWith: trimmedQuery,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        },
+        take: LIMIT,
+        select,
+    });
+
+    const remaining = LIMIT - prefixMatches.length;
+    if (remaining <= 0) return prefixMatches;
+
+    const prefixIds = prefixMatches.map((u) => u.id);
+
+    const containsMatches = await prisma.user.findMany({
+        where: {
+            id: { notIn: prefixIds },
+            OR: [
+                { username: { contains: trimmedQuery, mode: "insensitive" } },
+                {
+                    displayName: {
+                        contains: trimmedQuery,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        },
+        take: remaining,
+        select,
+    });
+
+    return [...prefixMatches, ...containsMatches];
+}
