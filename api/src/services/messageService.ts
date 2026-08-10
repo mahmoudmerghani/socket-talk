@@ -71,14 +71,16 @@ export async function sendMessageToUser(
     messageData: CreateMessageRequest,
     tx?: Prisma.TransactionClient,
 ) {
-    const DM = await getOrCreateDM(senderId, receiverId);
+    return withTransaction(tx, async (tx) => {
+        const DM = await getOrCreateDM(senderId, receiverId, tx);
 
-    return sendMessageToConversation(
-        senderId,
-        DM.conversationId,
-        messageData,
-        tx,
-    );
+        return sendMessageToConversation(
+            senderId,
+            DM.conversationId,
+            messageData,
+            tx,
+        );
+    });
 }
 
 async function getConversationParticipantsLastReadMessageIds(
