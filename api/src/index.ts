@@ -1,8 +1,9 @@
+import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
-import "dotenv/config";
 import authRouter from "./routes/authRouter.js";
 import userRouter from "./routes/userRouter.js";
+import conversationRouter from "./routes/conversationRouter.js";
 import cors from "cors";
 import { HttpError } from "./utils/HttpError.js";
 import type { ErrorRequestHandler } from "express";
@@ -21,6 +22,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/conversations", conversationRouter);
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (err instanceof HttpError) {
