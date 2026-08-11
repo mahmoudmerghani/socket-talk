@@ -1,7 +1,6 @@
 import type { CreateMessageRequest } from "@socket-talk/shared/schemas/messageSchemas.js";
 import { prisma } from "../../lib/prisma.js";
 import {
-    getDM,
     getOrCreateDM,
     requireConversationParticipant,
 } from "./conversationService.js";

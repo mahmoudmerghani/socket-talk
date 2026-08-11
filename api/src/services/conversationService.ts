@@ -472,16 +472,20 @@ export async function requireGroupAdmin(
     return group;
 }
 
-export async function getConversationParticipants(
-    userId: number,
-    conversationId: number,
-) {
-    await requireConversationParticipant(userId, conversationId);
+export async function getGroupMembers(conversationId: number) {
+    const group = await prisma.group.findUnique({
+        where: {
+            conversationId,
+        },
+    });
+
+    if (!group) {
+        throw new HttpError(404, "Not Found");
+    }
 
     const result = await prisma.conversationParticipant.findMany({
         where: {
             conversationId,
-            NOT: { userId },
         },
         select: {
             joinedAt: true,
