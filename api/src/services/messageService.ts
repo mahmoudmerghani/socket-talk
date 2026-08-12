@@ -15,13 +15,17 @@ export async function updateLastReadMessage(
     messageId: number,
     tx?: Prisma.TransactionClient,
 ) {
+    await requireConversationParticipant(userId, conversationId);
+    
     return withTransaction(tx, async (tx) => {
-        return tx.conversationParticipant.update({
+        return tx.conversationParticipant.updateMany({
             where: {
-                userId_conversationId: {
-                    conversationId,
-                    userId,
-                },
+                userId,
+                conversationId,
+                OR: [
+                    { lastReadMessageId: null },
+                    { lastReadMessageId: { lt: messageId } },
+                ],
             },
             data: {
                 lastReadMessageId: messageId,

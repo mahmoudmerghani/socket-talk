@@ -7,6 +7,7 @@ import conversationRouter from "./routes/conversationRouter.js";
 import cors from "cors";
 import { HttpError } from "./utils/HttpError.js";
 import type { ErrorRequestHandler } from "express";
+import { ZodError } from "zod/v4";
 
 const app = express();
 
@@ -29,6 +30,13 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
         return res.status(err.status).json({
             error: err.message,
             ...(err.code !== undefined ? { code: err.code } : {}),
+        });
+    }
+
+    if (err instanceof ZodError) {
+        const msg = err.issues.map((i) => i.message).join("\n");
+        return res.status(400).json({
+            error: msg,
         });
     }
 
