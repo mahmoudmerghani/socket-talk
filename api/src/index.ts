@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "./routes/authRouter.js";
 import userRouter from "./routes/userRouter.js";
 import conversationRouter from "./routes/conversationRouter.js";
+import groupRouter from "./routes/groupRouter.js";
 import cors from "cors";
 import { HttpError } from "./utils/HttpError.js";
 import type { ErrorRequestHandler } from "express";
@@ -24,6 +25,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/conversations", conversationRouter);
+app.use("/groups", groupRouter);
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (err instanceof HttpError) {

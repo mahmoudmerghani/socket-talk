@@ -6,6 +6,7 @@ import {
     conversationIdParamSchema,
     readMessageSchema,
 } from "@socket-talk/shared/schemas/conversationSchemas.js";
+import { createMessageSchema } from "@socket-talk/shared/schemas/messageSchemas.js";
 
 export const getAllUserConversations: RequestHandler = async (req, res) => {
     const conversations = await conversationService.getAllUserConversations(
@@ -64,4 +65,17 @@ export const updateLastReadMessage: RequestHandler = async (req, res) => {
     );
 
     res.status(204).end();
+};
+
+export const sendMessageToConversation: RequestHandler = async (req, res) => {
+    const { conversationId } = conversationIdParamSchema.parse(req.params);
+    const message = createMessageSchema.parse(req.body);
+
+    const result = await messageService.sendMessageToConversation(
+        req.user.id,
+        conversationId,
+        message,
+    );
+
+    res.json(result);
 };

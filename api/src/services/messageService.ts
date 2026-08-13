@@ -18,6 +18,7 @@ export async function updateLastReadMessage(
     await requireConversationParticipant(userId, conversationId);
     
     return withTransaction(tx, async (tx) => {
+        // lastReadId can only move forward to latest messages
         return tx.conversationParticipant.updateMany({
             where: {
                 userId,

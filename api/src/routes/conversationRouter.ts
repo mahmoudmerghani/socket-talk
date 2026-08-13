@@ -14,6 +14,11 @@ conversationRouter.get(
 );
 
 conversationRouter.post(
+    "/:conversationId/messages",
+    conversationController.sendMessageToConversation,
+);
+
+conversationRouter.post(
     "/:conversationId/read",
     conversationController.updateLastReadMessage,
 );
