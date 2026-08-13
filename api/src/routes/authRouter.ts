@@ -4,7 +4,7 @@ import { validate } from "../middlewares/validationMiddlewares.js";
 import {
     loginSchema,
     signupSchema,
-    githubSignupSchema
+    githubSignupSchema,
 } from "@socket-talk/shared/schemas/authSchemas.js";
 import { requireAuth } from "../middlewares/authMiddlewares.js";
 
@@ -18,8 +18,15 @@ authRouter.post("/logout", requireAuth, authController.logout);
 
 authRouter.get("/github", authController.redirectToGithubOauth);
 authRouter.get("/github/callback", authController.handleGithubOauthCallback);
-authRouter.get("/github/pending-signup", authController.getGithubPendingSignupData);
+authRouter.get(
+    "/github/pending-signup",
+    authController.getGithubPendingSignupData,
+);
 
-authRouter.post("/github/pending-signup", validate(githubSignupSchema), authController.signupWithGithub);
+authRouter.post(
+    "/github/pending-signup",
+    validate(githubSignupSchema),
+    authController.signupWithGithub,
+);
 
 export default authRouter;

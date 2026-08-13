@@ -83,6 +83,52 @@ export async function createGroup(
     });
 }
 
+export async function getGroupMembers(conversationId: number) {
+    const result = await prisma.conversationParticipant.findMany({
+        where: {
+            conversationId,
+        },
+        select: {
+            joinedAt: true,
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatarColor: true,
+                    avatarUrl: true,
+                },
+            },
+        },
+    });
+
+    return result.map((r) => ({ ...r.user, joinedAt: r.joinedAt }));
+}
+
+export async function getGroupInfo(conversationId: number) {
+    const group = await prisma.group.findUnique({
+        where: {
+            conversationId,
+        },
+    });
+
+    if (!group) {
+        throw new HttpError(404, "Not Found");
+    }
+
+    const members = await getGroupMembers(conversationId);
+
+    return { group, members };
+}
+
+export async function getAllGroups() {
+    return prisma.group.findMany({
+        orderBy: {
+            name: "asc",
+        },
+    });
+}
+
 export async function addUserToGroup(
     userId: number,
     conversationId: number,
@@ -111,6 +157,42 @@ export async function addUserToGroup(
             err.code === "P2002"
         ) {
             throw new HttpError(409, "User already in group");
+        }
+
+        throw err;
+    }
+}
+
+export async function removeUserFromGroup(
+    userId: number,
+    conversationId: number,
+    dbClient: Prisma.TransactionClient | typeof prisma = prisma,
+) {
+    const group = await dbClient.group.findUnique({
+        where: {
+            conversationId,
+        },
+    });
+
+    if (!group) {
+        throw new HttpError(404, "Not Found");
+    }
+
+    try {
+        await dbClient.conversationParticipant.delete({
+            where: {
+                userId_conversationId: {
+                    conversationId,
+                    userId,
+                },
+            },
+        });
+    } catch (err) {
+        if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2025"
+        ) {
+            throw new HttpError(404, "User is not a member of this group");
         }
 
         throw err;
@@ -156,6 +238,35 @@ export async function addUserToGlobalGroup(
             throw err;
         }
     });
+}
+
+export async function searchGroupsByName(query: string) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return [];
+
+    const LIMIT = 20;
+
+    const prefixMatches = await prisma.group.findMany({
+        where: {
+            name: { startsWith: trimmedQuery, mode: "insensitive" },
+        },
+        take: LIMIT,
+    });
+
+    const remaining = LIMIT - prefixMatches.length;
+    if (remaining <= 0) return prefixMatches;
+
+    const prefixIds = prefixMatches.map((g) => g.conversationId);
+
+    const containsMatches = await prisma.group.findMany({
+        where: {
+            conversationId: { notIn: prefixIds },
+            name: { contains: trimmedQuery, mode: "insensitive" },
+        },
+        take: remaining,
+    });
+
+    return [...prefixMatches, ...containsMatches];
 }
 
 export async function getDM(userId1: number, userId2: number) {
@@ -470,36 +581,4 @@ export async function requireGroupAdmin(
     }
 
     return group;
-}
-
-export async function getGroupMembers(conversationId: number) {
-    const group = await prisma.group.findUnique({
-        where: {
-            conversationId,
-        },
-    });
-
-    if (!group) {
-        throw new HttpError(404, "Not Found");
-    }
-
-    const result = await prisma.conversationParticipant.findMany({
-        where: {
-            conversationId,
-        },
-        select: {
-            joinedAt: true,
-            user: {
-                select: {
-                    id: true,
-                    username: true,
-                    displayName: true,
-                    avatarColor: true,
-                    avatarUrl: true,
-                },
-            },
-        },
-    });
-
-    return result.map((r) => ({ ...r.user, joinedAt: r.joinedAt }));
 }
