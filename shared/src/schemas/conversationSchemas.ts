@@ -40,3 +40,9 @@ export const readMessageSchema = z.object({
 });
 
 export type ReadMessageRequest = z.infer<typeof readMessageSchema>;
+
+export const searchGroupsQuerySchema = z.object({
+    q: z.string().trim().min(1).max(100),
+});
+
+export type SearchGroupsQueryRequest = z.infer<typeof searchGroupsQuerySchema>;
