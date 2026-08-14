@@ -1,4 +1,4 @@
-type User = {
+export type UserResponse = {
     createdAt: string;
     id: number;
     avatarColor: string;
@@ -10,11 +10,11 @@ type User = {
     isVerified: boolean;
 };
 
-export type GetAuthUserResponse = User;
+export type GetAuthUserResponse = UserResponse;
 
-export type LoginResponse = User;
+export type LoginResponse = UserResponse;
 
-export type SignupResponse = User;
+export type SignupResponse = UserResponse;
 
 export type GetGithubPendingSignupDataResponse = {
     id: number;
@@ -24,8 +24,7 @@ export type GetGithubPendingSignupDataResponse = {
     email: string | null;
 };
 
-export type SignupWithGithubResponse = User;
-
+export type SignupWithGithubResponse = UserResponse;
 
 export const OAUTH_FAILURE_GITHUB_CODE = "OAUTH_GITHUB_FAILED";
 export const EMAIL_FAILURE_GITHUB_CODE = "GITHUB_EMAIL_DUPLICATE";
