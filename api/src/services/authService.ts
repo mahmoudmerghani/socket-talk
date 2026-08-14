@@ -8,12 +8,21 @@ import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
-import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared/endpoints.js";
+import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
 import type { Prisma } from "../../generated/prisma/client.js";
 
 type DBClient = typeof prisma | Prisma.TransactionClient;
 
-export async function signupUser(userData: SignupRequest) {
+export type UserWithoutPassword = Omit<Prisma.UserModel, "password">;
+
+type IdentityReturnType = {
+    session: Prisma.SessionModel;
+    user: UserWithoutPassword;
+};
+
+export async function signupUser(
+    userData: SignupRequest,
+): Promise<IdentityReturnType> {
     const exist =
         (userData.email &&
             (await userService.getUserByEmail(userData.email))) ||
@@ -26,12 +35,15 @@ export async function signupUser(userData: SignupRequest) {
     const hashedPassword = await hash(userData.password, 10);
 
     const { user, session } = await prisma.$transaction(async (tx) => {
-        const user = await userService.createUser({
-            displayName: userData.displayName,
-            username: userData.username,
-            password: hashedPassword,
-            email: userData.email || null,
-        }, tx);
+        const user = await userService.createUser(
+            {
+                displayName: userData.displayName,
+                username: userData.username,
+                password: hashedPassword,
+                email: userData.email || null,
+            },
+            tx,
+        );
 
         const session = await createUserSession(user.id, tx);
 
@@ -40,7 +52,7 @@ export async function signupUser(userData: SignupRequest) {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    return { session, user: userWithoutPassword };
+    return { session, user: userWithoutPassword satisfies UserWithoutPassword };
 }
 
 export async function createUserSession(
@@ -61,7 +73,10 @@ export async function createUserSession(
     return session;
 }
 
-export async function loginUser({ identifier, password }: LoginRequest) {
+export async function loginUser({
+    identifier,
+    password,
+}: LoginRequest): Promise<IdentityReturnType> {
     const user = await userService.getUserByEmailOrUsername(identifier);
     const err = new HttpError(401, "Invalid username or password");
 
@@ -102,7 +117,9 @@ export async function verifySession(sessionId: string) {
     return session;
 }
 
-export async function getAuthenticatedUser(sessionId: string) {
+export async function getAuthenticatedUser(
+    sessionId: string,
+): Promise<UserWithoutPassword> {
     const session = await verifySession(sessionId);
 
     const user = await prisma.user.findUnique({
@@ -225,7 +242,7 @@ export async function loginWithGithub(code: string) {
     if (exists) {
         const session = await createUserSession(exists.user.id);
         const { password: _, ...userWithoutPassword } = exists.user;
-        return { session, user: userWithoutPassword };
+        return { session, user: userWithoutPassword } satisfies IdentityReturnType;
     }
 
     // if user doesn't exist then return github user data to continue sign up
@@ -236,7 +253,7 @@ export async function loginWithGithub(code: string) {
 export async function signupWithGithub(
     userSignupData: GithubSignupRequest,
     userGithubData: Awaited<ReturnType<typeof getGithubUser>>,
-) {
+): Promise<IdentityReturnType> {
     // user provided data have priority over prefilled github data except email (verified by github)
 
     if (await userService.getUserByUsername(userSignupData.username)) {

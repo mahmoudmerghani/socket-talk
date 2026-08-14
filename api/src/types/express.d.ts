@@ -1,8 +1,8 @@
-import type { User } from "../../generated/prisma/client.js";
+import type { UserWithoutPassword } from "../services/authService.ts";
 
 declare module "express-serve-static-core" {
     interface Request {
-        user: Omit<User, "password">;
+        user: UserWithoutPassword;
         validatedData: {
             body?: unknown;
             query?: unknown;
