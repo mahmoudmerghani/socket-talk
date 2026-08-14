@@ -25,3 +25,7 @@ export type GetGithubPendingSignupDataResponse = {
 };
 
 export type SignupWithGithubResponse = User;
+
+
+export const OAUTH_FAILURE_GITHUB_CODE = "OAUTH_GITHUB_FAILED";
+export const EMAIL_FAILURE_GITHUB_CODE = "GITHUB_EMAIL_DUPLICATE";
