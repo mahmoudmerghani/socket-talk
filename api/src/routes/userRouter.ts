@@ -10,6 +10,10 @@ const userRouter = express.Router();
 
 userRouter.use(requireAuth);
 
+userRouter.get("/", userController.getUsers);
+
+userRouter.get("/:userId", userController.getUser);
+
 const avatarMaxSize = 2 * 1024 * 1024; // 2 MB
 
 userRouter.patch(

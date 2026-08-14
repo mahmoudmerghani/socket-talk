@@ -3,6 +3,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { AVATAR_COLORS } from "@socket-talk/shared/schemas/authSchemas.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { addUserToGlobalGroup, createSelfChat } from "./conversationService.js";
+import { HttpError } from "../utils/HttpError.js";
 
 type DBClient = typeof prisma | Prisma.TransactionClient;
 
@@ -65,6 +66,42 @@ export async function createOauthAccount(
     });
 
     return account;
+}
+
+export async function getUserById(userId: number) {
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarColor: true,
+            avatarUrl: true,
+        },
+    });
+
+    if (!user) {
+        throw new HttpError(404, "Not Found");
+    }
+
+    return user;
+}
+
+export async function getAllUsers() {
+    return prisma.user.findMany({
+        orderBy: {
+            displayName: "asc",
+        },
+        select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarColor: true,
+            avatarUrl: true,
+        },
+    });
 }
 
 export async function searchUsersByUsernameOrDisplayName(query: string) {
