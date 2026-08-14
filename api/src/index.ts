@@ -5,6 +5,7 @@ import authRouter from "./routes/authRouter.js";
 import userRouter from "./routes/userRouter.js";
 import conversationRouter from "./routes/conversationRouter.js";
 import groupRouter from "./routes/groupRouter.js";
+import directRouter from "./routes/directRouter.js";
 import cors from "cors";
 import { HttpError } from "./utils/HttpError.js";
 import type { ErrorRequestHandler } from "express";
@@ -26,6 +27,7 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/conversations", conversationRouter);
 app.use("/groups", groupRouter);
+app.use("/direct", directRouter);
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (err instanceof HttpError) {

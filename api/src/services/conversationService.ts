@@ -275,7 +275,7 @@ export async function getDM(userId1: number, userId2: number) {
     const [id1, id2] =
         userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
 
-    return prisma.dM.findUnique({
+    const dm = await prisma.dM.findUnique({
         where: {
             userId1_userId2: {
                 userId1: id1,
@@ -283,6 +283,12 @@ export async function getDM(userId1: number, userId2: number) {
             },
         },
     });
+
+    if (!dm) {
+        throw new HttpError(404, "Not Found");
+    }
+
+    return dm;
 }
 
 export async function getOrCreateDM(
