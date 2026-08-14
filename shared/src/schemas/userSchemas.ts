@@ -8,6 +8,6 @@ export const searchUsersQuerySchema = z.object({
     q: z.string().trim().min(1).max(100),
 });
 
-export type SearchGroupsQueryRequest = z.infer<typeof searchUsersQuerySchema>;
+export type SearchUsersQueryRequest = z.infer<typeof searchUsersQuerySchema>;
 
 export type UserIdParam = z.infer<typeof userIdParamSchema>;
