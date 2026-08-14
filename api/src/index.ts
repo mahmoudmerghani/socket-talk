@@ -27,7 +27,7 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/conversations", conversationRouter);
 app.use("/groups", groupRouter);
-app.use("/direct", directRouter);
+app.use("/directs", directRouter);
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (err instanceof HttpError) {
