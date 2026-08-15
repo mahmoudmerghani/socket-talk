@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import * as authService from "../services/authService.js";
 import { HttpError } from "../utils/HttpError.js";
 import { OAUTH_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
-import { toUserResponse } from "../mappers/userMappers.js";
+import { toAuthUserResponse } from "../mappers/userMappers.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -22,7 +22,7 @@ export const login: RequestHandler = async (req, res) => {
         expires: session.expiresAt,
     });
 
-    res.json(toUserResponse(user));
+    res.json(toAuthUserResponse(user));
 };
 
 export const logout: RequestHandler = async (req, res) => {
@@ -40,11 +40,11 @@ export const signup: RequestHandler = async (req, res) => {
         expires: session.expiresAt,
     });
 
-    res.json(toUserResponse(user));
+    res.json(toAuthUserResponse(user));
 };
 
 export const getUser: RequestHandler = async (req, res) => {
-    res.json(toUserResponse(req.user));
+    res.json(toAuthUserResponse(req.user));
 };
 
 export const redirectToGithubOauth: RequestHandler = (req, res) => {
@@ -143,5 +143,5 @@ export const signupWithGithub: RequestHandler = async (req, res) => {
         expires: session.expiresAt,
     });
 
-    res.json(toUserResponse(user));
+    res.json(toAuthUserResponse(user));
 };

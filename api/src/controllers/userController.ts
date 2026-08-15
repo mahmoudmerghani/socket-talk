@@ -6,15 +6,20 @@ import {
     searchUsersQuerySchema,
     userIdParamSchema,
 } from "@socket-talk/shared/schemas/userSchemas.js";
+import {
+    toGetUserResponse,
+    toGetUsersResponse,
+    toUpdateAvatarResponse,
+} from "../mappers/userMappers.js";
 
 export const getUsers: RequestHandler = async (req, res) => {
     if (req.query.q !== undefined) {
         const { q } = searchUsersQuerySchema.parse(req.query);
         const users = await userService.searchUsersByUsernameOrDisplayName(q);
-        res.json(users);
+        res.json(toGetUsersResponse(users));
     } else {
         const users = await userService.getAllUsers();
-        res.json(users);
+        res.json(toGetUsersResponse(users));
     }
 };
 
@@ -23,7 +28,7 @@ export const getUser: RequestHandler = async (req, res) => {
 
     const user = await userService.getUserById(userId);
 
-    res.json(user);
+    res.json(toGetUserResponse(user));
 };
 
 export const updateAvatar: RequestHandler = async (req, res) => {
@@ -33,5 +38,5 @@ export const updateAvatar: RequestHandler = async (req, res) => {
 
     const result = await updateUserAvatar(req.user.id, req.file.buffer);
 
-    res.json(result);
+    res.json(toUpdateAvatarResponse(result));
 };

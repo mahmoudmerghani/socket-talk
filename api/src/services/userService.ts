@@ -158,3 +158,5 @@ export async function searchUsersByUsernameOrDisplayName(query: string) {
 
     return [...prefixMatches, ...containsMatches];
 }
+
+export type UserSummary = Awaited<ReturnType<typeof getUserById>>;
