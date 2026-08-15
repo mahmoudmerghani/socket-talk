@@ -6,6 +6,7 @@ import {
 } from "./conversationService.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
+import { HttpError } from "../utils/HttpError.js";
 
 export const MESSAGES_PAGE_SIZE = 50;
 
@@ -16,8 +17,20 @@ export async function updateLastReadMessage(
     tx?: Prisma.TransactionClient,
 ) {
     await requireConversationParticipant(userId, conversationId);
-    
+
     return withTransaction(tx, async (tx) => {
+        const message = await tx.message.findUnique({
+            where: {
+                id: messageId,
+            },
+            select: {
+                conversationId: true,
+            },
+        });
+
+        if (!message || message.conversationId !== conversationId) {
+            throw new HttpError(400, "Bad Request");
+        }
         // lastReadId can only move forward to latest messages
         return tx.conversationParticipant.updateMany({
             where: {
