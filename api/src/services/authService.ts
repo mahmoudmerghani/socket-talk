@@ -225,6 +225,8 @@ export async function getGithubUser(code: string) {
     };
 }
 
+export type GithubUserData = Awaited<ReturnType<typeof getGithubUser>>
+
 export async function loginWithGithub(code: string) {
     const user = await getGithubUser(code);
     const exists = await prisma.oauthAccount.findUnique({

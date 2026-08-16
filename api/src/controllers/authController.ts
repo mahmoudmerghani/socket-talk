@@ -2,7 +2,10 @@ import type { RequestHandler } from "express";
 import * as authService from "../services/authService.js";
 import { HttpError } from "../utils/HttpError.js";
 import { OAUTH_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
-import { toAuthUserResponse } from "../mappers/userMappers.js";
+import {
+    toAuthUserResponse,
+    toGetGithubPendingSignupDataResponse,
+} from "../mappers/userMappers.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -120,7 +123,7 @@ export const getGithubPendingSignupData: RequestHandler = (req, res) => {
 
     const data = JSON.parse(Buffer.from(cookie, "base64url").toString());
 
-    res.json(data);
+    res.json(toGetGithubPendingSignupDataResponse(data));
 };
 
 export const signupWithGithub: RequestHandler = async (req, res) => {

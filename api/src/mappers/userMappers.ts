@@ -1,10 +1,14 @@
-import type { UserWithoutPassword } from "../services/authService.js";
+import type {
+    UserWithoutPassword,
+    GithubUserData,
+} from "../services/authService.js";
 import type { UserSummary } from "../services/userService.js";
 import type {
     UserResponse,
     GetUserResponse,
     GetUsersResponse,
     UpdateAvatarResponse,
+    GetGithubPendingSignupDataResponse,
 } from "@socket-talk/shared";
 
 export function toAuthUserResponse(user: UserWithoutPassword): UserResponse {
@@ -48,5 +52,17 @@ export function toUpdateAvatarResponse(obj: {
     return {
         publicUrl: obj.publicUrl,
         path: obj.path,
+    };
+}
+
+export function toGetGithubPendingSignupDataResponse(
+    data: GithubUserData,
+): GetGithubPendingSignupDataResponse {
+    return {
+        avatarUrl: data.avatarUrl,
+        displayName: data.displayName,
+        email: data.email,
+        id: data.id,
+        username: data.username,
     };
 }
