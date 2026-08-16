@@ -161,10 +161,7 @@ export async function getConversationMessagesAroundCursor(
     conversationId: number,
     cursor: number,
 ) {
-    const { lastReadMessageId } = await requireConversationParticipant(
-        userId,
-        conversationId,
-    );
+    await requireConversationParticipant(userId, conversationId);
 
     const lowerBound = cursor - Math.floor(MESSAGES_PAGE_SIZE / 2) + 1;
     const upperBound = cursor + Math.floor(MESSAGES_PAGE_SIZE / 2);
@@ -175,7 +172,7 @@ export async function getConversationMessagesAroundCursor(
         upperBound,
     );
 
-    return { messages, lastReadMessageId };
+    return messages;
 }
 
 export async function getConversationMessagesBeforeCursor(
@@ -183,10 +180,7 @@ export async function getConversationMessagesBeforeCursor(
     conversationId: number,
     cursor: number,
 ) {
-    const { lastReadMessageId } = await requireConversationParticipant(
-        userId,
-        conversationId,
-    );
+    await requireConversationParticipant(userId, conversationId);
 
     const lowerBound = cursor - MESSAGES_PAGE_SIZE;
     const upperBound = cursor - 1;
@@ -197,7 +191,7 @@ export async function getConversationMessagesBeforeCursor(
         upperBound,
     );
 
-    return { messages, lastReadMessageId };
+    return messages;
 }
 
 export async function getConversationMessagesAfterCursor(
@@ -205,10 +199,7 @@ export async function getConversationMessagesAfterCursor(
     conversationId: number,
     cursor: number,
 ) {
-    const { lastReadMessageId } = await requireConversationParticipant(
-        userId,
-        conversationId,
-    );
+    await requireConversationParticipant(userId, conversationId);
 
     const lowerBound = cursor + 1;
     const upperBound = cursor + MESSAGES_PAGE_SIZE;
@@ -219,7 +210,7 @@ export async function getConversationMessagesAfterCursor(
         upperBound,
     );
 
-    return { messages, lastReadMessageId };
+    return messages;
 }
 
 // initial messages when user opens a conversation
@@ -260,3 +251,12 @@ export async function getConversationMessagesAroundLastReadMessage(
         lastReadMessageId: lastReadMessage?.id ?? null,
     };
 }
+
+export type ConversationMessagesWithoutQuery = Awaited<
+    ReturnType<typeof getConversationMessagesAroundLastReadMessage>
+>;
+
+export type ConversationMessagesWithQuery =
+    ConversationMessagesWithoutQuery["messages"];
+
+export type Message = Awaited<ReturnType<typeof sendMessageToConversation>>;

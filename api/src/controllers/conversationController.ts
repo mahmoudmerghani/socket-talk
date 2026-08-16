@@ -7,13 +7,19 @@ import {
     readMessageSchema,
 } from "@socket-talk/shared/schemas/conversationSchemas.js";
 import { createMessageSchema } from "@socket-talk/shared/schemas/messageSchemas.js";
+import {
+    toGetAllUserConversationsResponse,
+    toGetConversationMessagesWithQueryResponse,
+    toGetConversationMessagesWithoutQueryResponse,
+    toSendMessageToConversationResponse,
+} from "../mappers/conversationMappers.js";
 
 export const getAllUserConversations: RequestHandler = async (req, res) => {
     const conversations = await conversationService.getAllUserConversations(
         req.user.id,
     );
 
-    res.json(conversations);
+    res.json(toGetAllUserConversationsResponse(conversations));
 };
 
 export const getConversationMessages: RequestHandler = async (req, res) => {
@@ -23,35 +29,42 @@ export const getConversationMessages: RequestHandler = async (req, res) => {
     );
     const { conversationId } = conversationIdParamSchema.parse(req.params);
 
-    let messages;
-
     if (before !== undefined) {
-        messages = await messageService.getConversationMessagesBeforeCursor(
-            req.user.id,
-            conversationId,
-            before,
-        );
+        const messages =
+            await messageService.getConversationMessagesBeforeCursor(
+                req.user.id,
+                conversationId,
+                before,
+            );
+
+        res.json(toGetConversationMessagesWithQueryResponse(messages));
     } else if (around !== undefined) {
-        messages = await messageService.getConversationMessagesAroundCursor(
-            req.user.id,
-            conversationId,
-            around,
-        );
+        const messages =
+            await messageService.getConversationMessagesAroundCursor(
+                req.user.id,
+                conversationId,
+                around,
+            );
+
+        res.json(toGetConversationMessagesWithQueryResponse(messages));
     } else if (after !== undefined) {
-        messages = await messageService.getConversationMessagesAfterCursor(
-            req.user.id,
-            conversationId,
-            after,
-        );
+        const messages =
+            await messageService.getConversationMessagesAfterCursor(
+                req.user.id,
+                conversationId,
+                after,
+            );
+
+        res.json(toGetConversationMessagesWithQueryResponse(messages));
     } else {
-        messages =
+        const messages =
             await messageService.getConversationMessagesAroundLastReadMessage(
                 req.user.id,
                 conversationId,
             );
-    }
 
-    res.json(messages);
+        res.json(toGetConversationMessagesWithoutQueryResponse(messages));
+    }
 };
 
 export const updateLastReadMessage: RequestHandler = async (req, res) => {
@@ -77,5 +90,5 @@ export const sendMessageToConversation: RequestHandler = async (req, res) => {
         message,
     );
 
-    res.json(result);
+    res.json(toSendMessageToConversationResponse(result));
 };

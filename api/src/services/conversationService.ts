@@ -5,49 +5,6 @@ import { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 
-export type Conversation =
-    | {
-          id: number;
-          type: "DIRECT";
-          unreadMessagesCount: number;
-          lastMessage: {
-              senderId: number;
-              senderName: string;
-              content: string;
-              sentAt: Date;
-          } | null;
-          otherUser: {
-              id: number;
-              displayName: string;
-              avatarColor: string;
-              avatarUrl: string | null;
-          };
-      }
-    | {
-          id: number;
-          type: "GROUP";
-          unreadMessagesCount: number;
-          lastMessage: {
-              senderId: number;
-              senderName: string;
-              content: string;
-              sentAt: Date;
-          } | null;
-          group: {
-              name: string;
-              avatarColor: string;
-              avatarUrl: string | null;
-          };
-      }
-    | {
-          id: number;
-          type: "SELF";
-          lastMessage: {
-              content: string;
-              sentAt: Date;
-          } | null;
-      };
-
 export async function createGroup(
     userId: number,
     groupData: CreateGroupRequest,
@@ -300,49 +257,51 @@ export async function getOrCreateDM(
         throw new HttpError(400, "Cannot create self DM");
     }
 
-    const existingDm = await getDM(userId1, userId2);
-
-    if (existingDm) {
+    try {
+        const existingDm = await getDM(userId1, userId2);
         return existingDm;
+    } catch (err) {
+        if (err instanceof HttpError && err.status === 404) {
+            // order ids to guarantee that no other DM exists with the reverse order
+            // which can create a duplicate DM with the same two users
+            const [id1, id2] =
+                userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
+
+            return withTransaction(tx, async (tx) => {
+                const conversation = await tx.conversation.create({
+                    data: {
+                        type: "DIRECT",
+                    },
+                });
+
+                await tx.conversationParticipant.create({
+                    data: {
+                        userId: userId1,
+                        conversationId: conversation.id,
+                    },
+                });
+
+                await tx.conversationParticipant.create({
+                    data: {
+                        userId: userId2,
+                        conversationId: conversation.id,
+                    },
+                });
+
+                const DM = await tx.dM.create({
+                    data: {
+                        userId1: id1,
+                        userId2: id2,
+                        conversationId: conversation.id,
+                    },
+                });
+
+                return DM;
+            });
+        } else {
+            throw err;
+        }
     }
-
-    // order ids to guarantee that no other DM exists with the reverse order
-    // which can create a duplicate DM with the same two users
-
-    const [id1, id2] =
-        userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
-
-    return withTransaction(tx, async (tx) => {
-        const conversation = await tx.conversation.create({
-            data: {
-                type: "DIRECT",
-            },
-        });
-
-        await tx.conversationParticipant.create({
-            data: {
-                userId: userId1,
-                conversationId: conversation.id,
-            },
-        });
-
-        await tx.conversationParticipant.create({
-            data: {
-                userId: userId2,
-                conversationId: conversation.id,
-            },
-        });
-
-        const DM = await tx.dM.create({
-            data: {
-                userId1: id1,
-                userId2: id2,
-                conversationId: conversation.id,
-            },
-        });
-
-        return DM;
-    });
 }
 
 export async function getSelfChat(userId: number) {
@@ -465,10 +424,7 @@ export async function getAllUserConversations(userId: number) {
         },
     });
 
-    const userConversations: Conversation[] = new Array(conversations.length);
-    let i = 0;
-
-    for (const c of conversations) {
+    const userConversations = conversations.map((c) => {
         const lastMessage = c.conversation.messages[0] ?? null;
 
         const unreadMessagesCount =
@@ -489,8 +445,8 @@ export async function getAllUserConversations(userId: number) {
 
                 const otherUser = dm.user1.id === userId ? dm.user2 : dm.user1;
 
-                userConversations[i++] = {
-                    type: "DIRECT",
+                return {
+                    type: "DIRECT" as const,
                     id: c.conversation.id,
                     unreadMessagesCount,
                     lastMessage: lastMessage && {
@@ -506,8 +462,6 @@ export async function getAllUserConversations(userId: number) {
                         avatarUrl: otherUser.avatarUrl,
                     },
                 };
-
-                break;
             }
 
             case "GROUP": {
@@ -519,8 +473,8 @@ export async function getAllUserConversations(userId: number) {
                     );
                 }
 
-                userConversations[i++] = {
-                    type: "GROUP",
+                return {
+                    type: "GROUP" as const,
                     id: c.conversation.id,
                     unreadMessagesCount,
                     lastMessage: lastMessage && {
@@ -535,8 +489,6 @@ export async function getAllUserConversations(userId: number) {
                         avatarUrl: group.avatarUrl,
                     },
                 };
-
-                break;
             }
 
             case "SELF": {
@@ -548,19 +500,17 @@ export async function getAllUserConversations(userId: number) {
                     );
                 }
 
-                userConversations[i++] = {
-                    type: "SELF",
+                return {
+                    type: "SELF" as const,
                     id: c.conversation.id,
                     lastMessage: lastMessage && {
                         content: lastMessage.content,
                         sentAt: lastMessage.sentAt,
                     },
                 };
-
-                break;
             }
         }
-    }
+    });
 
     userConversations.sort(
         (a, b) =>
@@ -588,3 +538,5 @@ export async function requireGroupAdmin(
 
     return group;
 }
+
+export type Conversations = Awaited<ReturnType<typeof getAllUserConversations>>;
