@@ -1,65 +1,190 @@
-import type {
-    LoginRequest,
-    SignupRequest,
-    GithubSignupRequest,
-} from "./schemas/authSchemas.js";
-import type { Jsonify } from "type-fest";
+import * as bodies from "./index.js";
 
-type ResError = {
+export type ResError = {
     status: number;
     error: string;
     code?: string;
 };
 
-export type User = Jsonify<{
-    displayName: string;
-    username: string;
-    email: string | null;
-    id: number;
-    isVerified: boolean;
-    avatarColor: string;
-    avatarUrl: string | null;
-    avatarPath: string | null;
-    createdAt: Date;
-}>;
-
-type GithubPendingSignupData = {
-    id: number;
-    username: string;
-    displayName: string | null;
-    avatarUrl: string;
-    email: string | null;
-};
-
 export type Bodies<Request, Response> = {
     requestBody: Request;
-    responseBody: Response;
+    responseBody: Response | ResError;
 };
 
 export type Endpoints = {
     "/auth/login": {
-        POST: Bodies<LoginRequest, User | ResError>;
+        POST: {
+            bodies: Bodies<bodies.LoginRequest, bodies.LoginResponse>;
+        };
     };
 
     "/auth/signup": {
-        POST: Bodies<SignupRequest, User | ResError>;
+        POST: {
+            bodies: Bodies<bodies.SignupRequest, bodies.SignupResponse>;
+        };
     };
 
     "/auth/logout": {
-        POST: Bodies<never, void | ResError>;
+        POST: { bodies: Bodies<never, void> };
     };
 
     "/auth/me": {
-        GET: Bodies<never, User | ResError>;
+        GET: { bodies: Bodies<never, bodies.GetAuthUserResponse> };
     };
 
     "/auth/github/pending-signup": {
-        GET: Bodies<never, GithubPendingSignupData | ResError>;
-        POST: Bodies<GithubSignupRequest, User | ResError>;
+        GET: {
+            bodies: Bodies<never, bodies.GetGithubPendingSignupDataResponse>;
+        };
+        POST: {
+            bodies: Bodies<
+                bodies.GithubSignupRequest,
+                bodies.SignupWithGithubResponse
+            >;
+        };
+    };
+
+    "/conversations": {
+        GET: {
+            bodies: Bodies<never, bodies.GetAllUserConversationsResponse>;
+        };
+    };
+
+    "/conversations/:conversationId/messages": {
+        GET: {
+            bodies: Bodies<
+                never,
+                | bodies.GetConversationMessagesWithQueryResponse
+                | bodies.GetConversationMessagesWithoutQueryResponse
+            >;
+            params: {
+                conversationId: number;
+            };
+            queries: {
+                after?: number;
+                before?: number;
+                around?: number;
+            };
+        };
+
+        POST: {
+            bodies: Bodies<
+                bodies.CreateMessageRequest,
+                bodies.SendMessageToConversationResponse
+            >;
+            params: {
+                conversationId: number;
+            };
+        };
+    };
+
+    "/conversations/:conversationId": {
+        POST: {
+            bodies: Bodies<bodies.ReadMessageRequest, void>;
+            params: {
+                conversationId: number;
+            };
+        };
+    };
+
+    "/directs/:userId": {
+        GET: {
+            bodies: Bodies<never, bodies.GetDMResponse>;
+            params: {
+                userId: number;
+            };
+        };
+    };
+
+    "/directs/:userId/messages": {
+        POST: {
+            bodies: Bodies<
+                bodies.CreateMessageRequest,
+                bodies.SendMessageToUserResponse
+            >;
+            params: {
+                userId: number;
+            };
+        };
+    };
+
+    "/groups": {
+        GET: {
+            bodies: Bodies<never, bodies.GetGroupsResponse>;
+            queries: {
+                q?: string;
+            };
+        };
+        POST: {
+            bodies: Bodies<
+                bodies.CreateGroupRequest,
+                bodies.CreateGroupResponse
+            >;
+        };
+    };
+
+    "/groups/:conversationId": {
+        GET: {
+            bodies: Bodies<never, bodies.GetGroupInfoResponse>;
+            params: {
+                conversationId: number;
+            };
+        };
+    };
+
+    "/groups/:conversationId/members": {
+        GET: {
+            bodies: Bodies<never, bodies.GetGroupMembersResponse>;
+            params: {
+                conversationId: number;
+            };
+        };
+
+        POST: {
+            bodies: Bodies<never, void>;
+            params: {
+                conversationId: number;
+            };
+        };
+
+        DELETE: {
+            bodies: Bodies<never, void>;
+            params: {
+                conversationId: number;
+            };
+        };
+    };
+
+    "/groups/:conversationId/group-image": {
+        PATCH: {
+            bodies: Bodies<FormData, bodies.UpdateGroupImageResponse>;
+            params: {
+                conversationId: number;
+            };
+        };
+    };
+
+    "/users": {
+        GET: {
+            bodies: Bodies<never, bodies.GetUsersResponse>;
+            queries: {
+                q?: string;
+            };
+        };
+    };
+
+    "/users/:userId": {
+        GET: {
+            bodies: Bodies<never, bodies.GetUserResponse>;
+            params: {
+                userId: number;
+            };
+        };
     };
 
     "/users/me/avatar": {
-        PATCH: Bodies<FormData, { publicUrl: string } | ResError>;
+        PATCH: {
+            bodies: Bodies<FormData, bodies.UpdateAvatarResponse>;
+        };
     };
 };
-
