@@ -8,3 +8,5 @@ export * from "./types/conversation.js";
 export * from "./types/direct.js";
 export * from "./types/group.js";
 export * from "./types/user.js";
+
+export * from "./endpoints.js";

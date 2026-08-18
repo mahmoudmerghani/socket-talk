@@ -11,6 +11,7 @@ export type Bodies<Request, Response> = {
     responseBody: Response | ResError;
 };
 
+// should i include the endpoints that redirects?
 export type Endpoints = {
     "/auth/login": {
         POST: {
@@ -30,6 +31,14 @@ export type Endpoints = {
 
     "/auth/me": {
         GET: { bodies: Bodies<never, bodies.GetAuthUserResponse> };
+    };
+
+    "/auth/github": {
+        GET: { bodies: Bodies<never, void> };
+    };
+
+    "/auth/github/callback": {
+        GET: { bodies: Bodies<never, void> };
     };
 
     "/auth/github/pending-signup": {
