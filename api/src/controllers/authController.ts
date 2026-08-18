@@ -1,11 +1,11 @@
-import type { RequestHandler } from "express";
+import type { Controller } from "../utils/controller.js";
 import * as authService from "../services/authService.js";
 import { HttpError } from "../utils/HttpError.js";
 import { OAUTH_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
 import {
     toAuthUserResponse,
     toGetGithubPendingSignupDataResponse,
-} from "../mappers/userMappers.js";
+} from "../mappers/authMappers.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -16,7 +16,7 @@ const cookieOptions = {
     path: "/",
 } as const;
 
-export const login: RequestHandler = async (req, res) => {
+export const login: Controller<"/auth/login", "POST"> = async (req, res) => {
     const { user, session } = await authService.loginUser(req.body);
 
     // allow cross-origin cookies in production (different client and api origins)
@@ -28,14 +28,14 @@ export const login: RequestHandler = async (req, res) => {
     res.json(toAuthUserResponse(user));
 };
 
-export const logout: RequestHandler = async (req, res) => {
+export const logout: Controller<"/auth/logout", "POST"> = async (req, res) => {
     await authService.logoutUser(req.cookies.sid);
     res.clearCookie("sid");
 
     res.status(204).end();
 };
 
-export const signup: RequestHandler = async (req, res) => {
+export const signup: Controller<"/auth/signup", "POST"> = async (req, res) => {
     const { user, session } = await authService.signupUser(req.body);
 
     res.cookie("sid", session.id, {
@@ -46,11 +46,14 @@ export const signup: RequestHandler = async (req, res) => {
     res.json(toAuthUserResponse(user));
 };
 
-export const getUser: RequestHandler = async (req, res) => {
+export const getUser: Controller<"/auth/me", "GET"> = async (req, res) => {
     res.json(toAuthUserResponse(req.user));
 };
 
-export const redirectToGithubOauth: RequestHandler = (req, res) => {
+export const redirectToGithubOauth: Controller<"/auth/github", "GET"> = (
+    req,
+    res,
+) => {
     const state = authService.createOauthState();
 
     res.cookie("oauth-state", state, {
@@ -71,7 +74,10 @@ export const redirectToGithubOauth: RequestHandler = (req, res) => {
     res.redirect(url.toString());
 };
 
-export const handleGithubOauthCallback: RequestHandler = async (req, res) => {
+export const handleGithubOauthCallback: Controller<
+    "/auth/github/callback",
+    "GET"
+> = async (req, res) => {
     const { code, state, error } = req.query;
 
     if (error || !code || !state || state !== req.cookies["oauth-state"]) {
@@ -113,7 +119,10 @@ export const handleGithubOauthCallback: RequestHandler = async (req, res) => {
     res.redirect(`${process.env.CLIENT_URL}/auth/github/pending-signup`);
 };
 
-export const getGithubPendingSignupData: RequestHandler = (req, res) => {
+export const getGithubPendingSignupData: Controller<
+    "/auth/github/pending-signup",
+    "GET"
+> = (req, res) => {
     const cookie: string | undefined =
         req.signedCookies["github-pending-signup"];
 
@@ -126,7 +135,10 @@ export const getGithubPendingSignupData: RequestHandler = (req, res) => {
     res.json(toGetGithubPendingSignupDataResponse(data));
 };
 
-export const signupWithGithub: RequestHandler = async (req, res) => {
+export const signupWithGithub: Controller<
+    "/auth/github/pending-signup",
+    "POST"
+> = async (req, res) => {
     const cookie: string | undefined =
         req.signedCookies["github-pending-signup"];
 

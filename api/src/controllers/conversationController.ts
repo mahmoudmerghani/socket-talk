@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { Controller } from "../utils/controller.js";
 import * as conversationService from "../services/conversationService.js";
 import * as messageService from "../services/messageService.js";
 import {
@@ -14,7 +14,10 @@ import {
     toSendMessageToConversationResponse,
 } from "../mappers/conversationMappers.js";
 
-export const getAllUserConversations: RequestHandler = async (req, res) => {
+export const getAllUserConversations: Controller<
+    "/conversations",
+    "GET"
+> = async (req, res) => {
     const conversations = await conversationService.getAllUserConversations(
         req.user.id,
     );
@@ -22,7 +25,10 @@ export const getAllUserConversations: RequestHandler = async (req, res) => {
     res.json(toGetAllUserConversationsResponse(conversations));
 };
 
-export const getConversationMessages: RequestHandler = async (req, res) => {
+export const getConversationMessages: Controller<
+    "/conversations/:conversationId/messages",
+    "GET"
+> = async (req, res) => {
     // thrown zod errors are handled by the global error handler
     const { before, around, after } = getConversationMessagesQuerySchema.parse(
         req.query,
@@ -67,7 +73,10 @@ export const getConversationMessages: RequestHandler = async (req, res) => {
     }
 };
 
-export const updateLastReadMessage: RequestHandler = async (req, res) => {
+export const updateLastReadMessage: Controller<
+    "/conversations/:conversationId/read",
+    "POST"
+> = async (req, res) => {
     const { conversationId } = conversationIdParamSchema.parse(req.params);
     const { messageId } = readMessageSchema.parse(req.body);
 
@@ -80,7 +89,10 @@ export const updateLastReadMessage: RequestHandler = async (req, res) => {
     res.status(204).end();
 };
 
-export const sendMessageToConversation: RequestHandler = async (req, res) => {
+export const sendMessageToConversation: Controller<
+    "/conversations/:conversationId/messages",
+    "POST"
+> = async (req, res) => {
     const { conversationId } = conversationIdParamSchema.parse(req.params);
     const message = createMessageSchema.parse(req.body);
 

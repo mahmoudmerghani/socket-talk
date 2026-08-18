@@ -1,20 +1,21 @@
-import type {
-    GetAllUserConversationsResponse,
-    GetConversationMessagesWithoutQueryResponse,
-    GetConversationMessagesWithQueryResponse,
-    SendMessageToConversationResponse,
-} from "@socket-talk/shared";
 import type { Conversations } from "../services/conversationService.js";
 import type {
     ConversationMessagesWithoutQuery,
     ConversationMessagesWithQuery,
     Message,
 } from "../services/messageService.js";
+import type { SuccessResBodyOf } from "../utils/controller.js";
 
 export function toGetAllUserConversationsResponse(
     conversations: Conversations,
-): GetAllUserConversationsResponse {
-    return conversations.map((c): GetAllUserConversationsResponse[number] => {
+): SuccessResBodyOf<"/conversations", "GET"> {
+    // response body in case of a successful response status 200
+    type ConversationElement = SuccessResBodyOf<
+        "/conversations",
+        "GET"
+    >[number];
+
+    return conversations.map((c): ConversationElement => {
         switch (c.type) {
             case "DIRECT":
                 return {
@@ -68,27 +69,40 @@ export function toGetAllUserConversationsResponse(
 
 export function toGetConversationMessagesWithoutQueryResponse(
     messagesObj: ConversationMessagesWithoutQuery,
-): GetConversationMessagesWithoutQueryResponse {
-    type messagesArray =
-        GetConversationMessagesWithoutQueryResponse["messages"];
+): SuccessResBodyOf<"/conversations/:conversationId/messages", "GET"> {
+    type MessagesElement =
+        SuccessResBodyOf<
+            "/conversations/:conversationId/messages",
+            "GET"
+        > extends object | Array<infer M>
+            ? M
+            : never;
+
     type OthersLastReadMessageIdsArray =
-        GetConversationMessagesWithoutQueryResponse["othersLastReadMessageIds"];
+        SuccessResBodyOf<
+            "/conversations/:conversationId/messages",
+            "GET"
+        > extends { othersLastReadMessageIds: infer O } | Array<any>
+            ? O
+            : never;
 
     return {
         lastReadMessageId: messagesObj.lastReadMessageId,
-        messages: messagesObj.messages.map((m): messagesArray[number] => ({
-            content: m.content,
-            id: m.id,
-            sender: {
-                avatarColor: m.sender.avatarColor,
-                avatarUrl: m.sender.avatarUrl,
-                displayName: m.sender.displayName,
-                id: m.sender.id,
-                username: m.sender.username,
-            },
-            sentAt: m.sentAt.toISOString(),
-            sequenceNumber: m.sequenceNumber,
-        })),
+        messages: messagesObj.messages.map(
+            (m): MessagesElement => ({
+                content: m.content,
+                id: m.id,
+                sender: {
+                    avatarColor: m.sender.avatarColor,
+                    avatarUrl: m.sender.avatarUrl,
+                    displayName: m.sender.displayName,
+                    id: m.sender.id,
+                    username: m.sender.username,
+                },
+                sentAt: m.sentAt.toISOString(),
+                sequenceNumber: m.sequenceNumber,
+            }),
+        ),
         othersLastReadMessageIds: messagesObj.othersLastReadMessageIds.map(
             (o): OthersLastReadMessageIdsArray[number] => ({
                 lastReadMessageId: o.lastReadMessageId,
@@ -100,11 +114,17 @@ export function toGetConversationMessagesWithoutQueryResponse(
 
 export function toGetConversationMessagesWithQueryResponse(
     messagesArray: ConversationMessagesWithQuery,
-): GetConversationMessagesWithQueryResponse {
-    type messageObj = GetConversationMessagesWithQueryResponse[number];
+): SuccessResBodyOf<"/conversations/:conversationId/messages", "GET"> {
+    type MessagesElement =
+        SuccessResBodyOf<
+            "/conversations/:conversationId/messages",
+            "GET"
+        > extends object | Array<infer M>
+            ? M
+            : never;
 
     return messagesArray.map(
-        (m): messageObj => ({
+        (m): MessagesElement => ({
             content: m.content,
             id: m.id,
             sender: {
@@ -122,7 +142,7 @@ export function toGetConversationMessagesWithQueryResponse(
 
 export function toSendMessageToConversationResponse(
     message: Message,
-): SendMessageToConversationResponse {
+): SuccessResBodyOf<"/conversations/:conversationId/messages", "POST"> {
     return {
         content: message.content,
         conversationId: message.conversationId,

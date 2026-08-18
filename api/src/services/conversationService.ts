@@ -540,3 +540,8 @@ export async function requireGroupAdmin(
 }
 
 export type Conversations = Awaited<ReturnType<typeof getAllUserConversations>>;
+export type Groups = Awaited<ReturnType<typeof getAllGroups>>;
+export type GroupInfo = Awaited<ReturnType<typeof getGroupInfo>>;
+export type GroupMembers = Awaited<ReturnType<typeof getGroupMembers>>;
+export type CreateGroupReturnType = Awaited<ReturnType<typeof createGroup>>;
+export type DM = Awaited<ReturnType<typeof getDM>>;

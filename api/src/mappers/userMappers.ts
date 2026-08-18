@@ -1,31 +1,9 @@
-import type {
-    UserWithoutPassword,
-    GithubUserData,
-} from "../services/authService.js";
 import type { UserSummary } from "../services/userService.js";
-import type {
-    UserResponse,
-    GetUserResponse,
-    GetUsersResponse,
-    UpdateAvatarResponse,
-    GetGithubPendingSignupDataResponse,
-} from "@socket-talk/shared";
+import type { SuccessResBodyOf } from "../utils/controller.js";
 
-export function toAuthUserResponse(user: UserWithoutPassword): UserResponse {
-    return {
-        avatarColor: user.avatarColor,
-        avatarPath: user.avatarPath,
-        avatarUrl: user.avatarUrl,
-        createdAt: user.createdAt.toISOString(),
-        displayName: user.displayName,
-        email: user.email,
-        id: user.id,
-        isVerified: user.isVerified,
-        username: user.username,
-    };
-}
-
-export function toGetUserResponse(user: UserSummary): GetUserResponse {
+export function toGetUserResponse(
+    user: UserSummary,
+): SuccessResBodyOf<"/users/:userId", "GET"> {
     return {
         avatarColor: user.avatarColor,
         avatarUrl: user.avatarUrl,
@@ -35,34 +13,28 @@ export function toGetUserResponse(user: UserSummary): GetUserResponse {
     };
 }
 
-export function toGetUsersResponse(users: UserSummary[]): GetUsersResponse {
-    return users.map((u) => ({
-        avatarColor: u.avatarColor,
-        avatarUrl: u.avatarUrl,
-        displayName: u.displayName,
-        id: u.id,
-        username: u.username,
-    }));
+export function toGetUsersResponse(
+    users: UserSummary[],
+): SuccessResBodyOf<"/users", "GET"> {
+    type UserElement = SuccessResBodyOf<"/users", "GET">[number];
+
+    return users.map(
+        (u): UserElement => ({
+            avatarColor: u.avatarColor,
+            avatarUrl: u.avatarUrl,
+            displayName: u.displayName,
+            id: u.id,
+            username: u.username,
+        }),
+    );
 }
 
 export function toUpdateAvatarResponse(obj: {
     publicUrl: string;
     path: string;
-}): UpdateAvatarResponse {
+}): SuccessResBodyOf<"/users/me/avatar", "PATCH"> {
     return {
         publicUrl: obj.publicUrl,
         path: obj.path,
-    };
-}
-
-export function toGetGithubPendingSignupDataResponse(
-    data: GithubUserData,
-): GetGithubPendingSignupDataResponse {
-    return {
-        avatarUrl: data.avatarUrl,
-        displayName: data.displayName,
-        email: data.email,
-        id: data.id,
-        username: data.username,
     };
 }

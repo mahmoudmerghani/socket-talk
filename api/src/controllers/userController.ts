@@ -1,5 +1,5 @@
 import * as userService from "../services/userService.js";
-import type { RequestHandler } from "express";
+import type { Controller } from "../utils/controller.js";
 import { updateUserAvatar } from "../services/imageService.js";
 import { HttpError } from "../utils/HttpError.js";
 import {
@@ -12,7 +12,7 @@ import {
     toUpdateAvatarResponse,
 } from "../mappers/userMappers.js";
 
-export const getUsers: RequestHandler = async (req, res) => {
+export const getUsers: Controller<"/users", "GET"> = async (req, res) => {
     if (req.query.q !== undefined) {
         const { q } = searchUsersQuerySchema.parse(req.query);
         const users = await userService.searchUsersByUsernameOrDisplayName(q);
@@ -23,7 +23,7 @@ export const getUsers: RequestHandler = async (req, res) => {
     }
 };
 
-export const getUser: RequestHandler = async (req, res) => {
+export const getUser: Controller<"/users/:userId", "GET"> = async (req, res) => {
     const { userId } = userIdParamSchema.parse(req.params);
 
     const user = await userService.getUserById(userId);
@@ -31,7 +31,7 @@ export const getUser: RequestHandler = async (req, res) => {
     res.json(toGetUserResponse(user));
 };
 
-export const updateAvatar: RequestHandler = async (req, res) => {
+export const updateAvatar: Controller<"/users/me/avatar", "PATCH"> = async (req, res) => {
     if (!req.file) {
         throw new HttpError(400, "Group image is required");
     }

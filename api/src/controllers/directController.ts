@@ -1,18 +1,28 @@
 import * as conversationService from "../services/conversationService.js";
 import * as messageService from "../services/messageService.js";
-import type { RequestHandler } from "express";
+import type { Controller } from "../utils/controller.js";
 import { userIdParamSchema } from "@socket-talk/shared/schemas/userSchemas.js";
 import { createMessageSchema } from "@socket-talk/shared/schemas/messageSchemas.js";
+import {
+    toGetDMResponse,
+    toSendMessageToUserResponse,
+} from "../mappers/directMappers.js";
 
-export const getDM: RequestHandler = async (req, res) => {
+export const getDM: Controller<"/directs/:userId", "GET"> = async (
+    req,
+    res,
+) => {
     const { userId } = userIdParamSchema.parse(req.params);
 
     const dm = await conversationService.getDM(req.user.id, userId);
 
-    res.json(dm);
+    res.json(toGetDMResponse(dm));
 };
 
-export const sendMessageToUser: RequestHandler = async (req, res) => {
+export const sendMessageToUser: Controller<
+    "/directs/:userId/messages",
+    "POST"
+> = async (req, res) => {
     const { userId } = userIdParamSchema.parse(req.params);
     const body = createMessageSchema.parse(req.body);
 
@@ -22,5 +32,5 @@ export const sendMessageToUser: RequestHandler = async (req, res) => {
         body,
     );
 
-    res.json(message);
+    res.json(toSendMessageToUserResponse(message));
 };
