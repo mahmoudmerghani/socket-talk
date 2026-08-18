@@ -87,7 +87,7 @@ export type Endpoints = {
         };
     };
 
-    "/conversations/:conversationId": {
+    "/conversations/:conversationId/read": {
         POST: {
             bodies: Bodies<bodies.ReadMessageRequest, void>;
             params: {
