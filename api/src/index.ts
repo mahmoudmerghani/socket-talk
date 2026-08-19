@@ -1,15 +1,17 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/authRouter.js";
 import userRouter from "./routes/userRouter.js";
 import conversationRouter from "./routes/conversationRouter.js";
 import groupRouter from "./routes/groupRouter.js";
 import directRouter from "./routes/directRouter.js";
-import cors from "cors";
 import { HttpError } from "./utils/HttpError.js";
-import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod/v4";
+import type { ErrorRequestHandler } from "express";
+import type { ParamsDictionary } from "express-serve-static-core";
+import type { ResError } from "@socket-talk/shared";
 
 const app = express();
 
@@ -29,10 +31,16 @@ app.use("/conversations", conversationRouter);
 app.use("/groups", groupRouter);
 app.use("/directs", directRouter);
 
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+const errorHandler: ErrorRequestHandler<ParamsDictionary, ResError> = (
+    err,
+    req,
+    res,
+    next,
+) => {
     if (err instanceof HttpError) {
         return res.status(err.status).json({
             error: err.message,
+            status: err.status,
             ...(err.code !== undefined ? { code: err.code } : {}),
         });
     }
@@ -41,12 +49,14 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
         const msg = err.issues.map((i) => i.message).join("\n");
         return res.status(400).json({
             error: msg,
+            status: 400,
         });
     }
 
     console.error(err);
     return res.status(500).json({
         error: "Server error",
+        status: 500,
     });
 };
 
