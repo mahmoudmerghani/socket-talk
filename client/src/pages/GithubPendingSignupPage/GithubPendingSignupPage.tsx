@@ -4,7 +4,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
 import { LoadingScreen } from "../../components/LoadingScreen/LoadingScreen";
-import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared/endpoints.js";
+import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
 import "./GithubPendingSignupPage.css";
 
 function ErrorMessage({ message }: { message: string }) {

@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { User } from "@socket-talk/shared/endpoints.js";
 import { addResponseHandler, api, removeResponseHandler } from "../api/api";
 
-type AuthUser = User;
+type AuthUser = Exclude<Awaited<ReturnType<typeof api<"/auth/me", "GET">>>, { error: unknown }>;
 
 type AuthContextValue = {
     user: AuthUser | null;
