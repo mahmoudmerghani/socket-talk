@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
-import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
 import { ConversationList, type Conversation } from "../../components/ConversationList/ConversationList";
+import { ChatPane } from "../../components/ChatPane/ChatPane";
 import "./HomePage.css";
 
 export function HomePage() {
@@ -42,12 +42,6 @@ export function HomePage() {
 
     const handleBackToList = () => {
         setSelectedConversation(null);
-    };
-
-    const getChatTitle = (conv: Conversation) => {
-        if (conv.type === "DIRECT") return conv.otherUser.displayName;
-        if (conv.type === "GROUP") return conv.group.name;
-        return "Saved Messages";
     };
 
     return (
@@ -110,65 +104,11 @@ export function HomePage() {
             {/* Right Chat Main Area */}
             <main className="chat-layout-main">
                 {selectedConversation ? (
-                    <div className="active-chat-container">
-                        <header className="active-chat-header">
-                            <button
-                                type="button"
-                                className="chat-back-btn"
-                                onClick={handleBackToList}
-                                aria-label="Back to conversation list"
-                            >
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="15 18 9 12 15 6" />
-                                </svg>
-                            </button>
-
-                            <div className="active-chat-avatar-wrapper">
-                                {selectedConversation.type === "DIRECT" ? (
-                                    <Avatar
-                                        displayName={selectedConversation.otherUser.displayName}
-                                        avatarColor={selectedConversation.otherUser.avatarColor}
-                                        avatarUrl={selectedConversation.otherUser.avatarUrl}
-                                        size="2.6rem"
-                                    />
-                                ) : selectedConversation.type === "GROUP" ? (
-                                    <Avatar
-                                        displayName={selectedConversation.group.name}
-                                        avatarColor={selectedConversation.group.avatarColor}
-                                        avatarUrl={selectedConversation.group.avatarUrl}
-                                        size="2.6rem"
-                                    />
-                                ) : (
-                                    <div className="saved-messages-badge-avatar small" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                                            <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="active-chat-details">
-                                <h2 className="active-chat-title">{getChatTitle(selectedConversation)}</h2>
-                                <span className="active-chat-subtitle">
-                                    {selectedConversation.type === "DIRECT"
-                                        ? "Direct Message"
-                                        : selectedConversation.type === "GROUP"
-                                          ? "Group Chat"
-                                          : "Your Personal Cloud"}
-                                </span>
-                            </div>
-                        </header>
-
-                        <div className="active-chat-messages-placeholder">
-                            <div className="active-chat-placeholder-card">
-                                <div className="placeholder-brand">
-                                    <BrandLogo />
-                                </div>
-                                <h3>{getChatTitle(selectedConversation)}</h3>
-                                <p>Conversation history and messaging will be connected next.</p>
-                            </div>
-                        </div>
-                    </div>
+                    <ChatPane
+                        conversation={selectedConversation}
+                        currentUser={user}
+                        onBack={handleBackToList}
+                    />
                 ) : (
                     <div className="empty-chat-state">
                         <div className="empty-chat-illustration">
