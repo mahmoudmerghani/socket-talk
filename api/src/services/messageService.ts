@@ -16,9 +16,9 @@ export async function updateLastReadMessage(
     messageId: number,
     tx?: Prisma.TransactionClient,
 ) {
-    await requireConversationParticipant(userId, conversationId);
-
     return withTransaction(tx, async (tx) => {
+        await requireConversationParticipant(userId, conversationId, tx);
+
         const message = await tx.message.findUnique({
             where: {
                 id: messageId,
@@ -55,9 +55,9 @@ export async function sendMessageToConversation(
     messageData: CreateMessageRequest,
     tx?: Prisma.TransactionClient,
 ) {
-    await requireConversationParticipant(senderId, conversationId);
-
     return withTransaction(tx, async (tx) => {
+        await requireConversationParticipant(senderId, conversationId, tx);
+
         const { sequenceCounter } = await tx.conversation.update({
             where: {
                 id: conversationId,

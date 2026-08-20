@@ -2,6 +2,7 @@ import {
     createGroup,
     createSelfChat,
 } from "../services/conversationService.js";
+import { sendMessageToConversation } from "../services/messageService.js";
 import { prisma } from "../../lib/prisma.js";
 import { hash } from "bcryptjs";
 import { AVATAR_COLORS } from "@socket-talk/shared";
@@ -29,8 +30,33 @@ async function main() {
             },
         });
 
-        await createGroup(newUser.id, { name: "GLOBAL" }, tx);
+        const { conversation } = await createGroup(
+            newUser.id,
+            { name: "GLOBAL" },
+            tx,
+        );
         await createSelfChat(newUser.id, tx);
+
+        const isProduction = process.env.NODE_ENV === "production";
+
+        if (!isProduction) {
+            const promises = Array(200);
+
+            for (let i = 0; i < 200; i++) {
+                promises.push(
+                    sendMessageToConversation(
+                        newUser.id,
+                        conversation.id,
+                        {
+                            content: `Message #${i + 1}`,
+                        },
+                        tx,
+                    ),
+                );
+            }
+
+            await Promise.all(promises);
+        }
     });
 
     console.log("DONE");

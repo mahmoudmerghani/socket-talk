@@ -356,30 +356,33 @@ export async function getConversation(conversationId: number) {
 export async function requireConversationParticipant(
     userId: number,
     conversationId: number,
+    tx?: Prisma.TransactionClient,
 ) {
-    const conversationParticipant =
-        await prisma.conversationParticipant.findUnique({
-            where: {
-                userId_conversationId: {
-                    conversationId,
-                    userId,
+    return withTransaction(tx, async (tx) => {
+        const conversationParticipant =
+            await tx.conversationParticipant.findUnique({
+                where: {
+                    userId_conversationId: {
+                        conversationId,
+                        userId,
+                    },
                 },
-            },
-            select: {
-                userId: true,
-                conversationId: true,
-                joinedAt: true,
-                lastReadMessageId: true,
-                lastReadMessage: true,
-                conversation: true,
-            },
-        });
+                select: {
+                    userId: true,
+                    conversationId: true,
+                    joinedAt: true,
+                    lastReadMessageId: true,
+                    lastReadMessage: true,
+                    conversation: true,
+                },
+            });
 
-    if (!conversationParticipant) {
-        throw new HttpError(403, "Forbidden");
-    }
+        if (!conversationParticipant) {
+            throw new HttpError(403, "Forbidden");
+        }
 
-    return conversationParticipant;
+        return conversationParticipant;
+    });
 }
 
 export async function getAllUserConversations(userId: number) {
