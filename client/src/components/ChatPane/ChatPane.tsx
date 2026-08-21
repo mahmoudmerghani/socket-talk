@@ -217,8 +217,19 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             return;
         }
 
+
         const newestMessage = messagesRef.current[messagesRef.current.length - 1];
         if (!newestMessage) return;
+
+        api("/conversations/:conversationId/read", {
+            method: "POST",
+            params: {
+                conversationId: conversation.id,
+            },
+            body: {
+                messageId: newestMessage.id
+            }
+        });
 
         setIsLoadingAfter(true);
 
@@ -276,6 +287,15 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                 const existingIds = new Set(prev.map((m) => m.id));
                 const newMessages = response.filter((m) => !existingIds.has(m.id));
                 return newMessages.length > 0 ? [...prev, ...newMessages] : prev;
+            });
+            api("/conversations/:conversationId/read", {
+                method: "POST",
+                params: {
+                    conversationId: conversation.id,
+                },
+                body: {
+                    messageId: response[response.length - 1].id
+                }
             });
         }
 
@@ -442,9 +462,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                                     ) : null}
 
                                     <div
-                                        className={`chat-message-bubble-wrapper ${
-                                            isOutgoing ? "outgoing" : "incoming"
-                                        }`}
+                                        className={`chat-message-bubble-wrapper ${isOutgoing ? "outgoing" : "incoming"
+                                            }`}
                                     >
                                         {!isOutgoing && conversation.type === "GROUP" ? (
                                             <div className="chat-message-avatar">
