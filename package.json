@@ -1,5 +1,9 @@
 {
   "private": true,
+  "scripts": {
+    "build:api": "npm run build --workspace=shared && npm run build --workspace=api",
+    "build:prod:api": "npm run build --workspace=shared && npm run build:prod --workspace=api"
+  },
   "workspaces": [
     "api",
     "client",
