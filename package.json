@@ -2,7 +2,9 @@
   "private": true,
   "scripts": {
     "build:api": "npm run build --workspace=shared && npm run build --workspace=api",
-    "build:prod:api": "npm run build --workspace=shared && npm run build:prod --workspace=api"
+    "build:prod:api": "npm run build --workspace=shared && npm run build:prod --workspace=api",
+    "start:api": "npm run start --workspace=api",
+    "start:prod:api": "npm run start:prod --workspace=api"
   },
   "workspaces": [
     "api",
