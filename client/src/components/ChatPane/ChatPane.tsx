@@ -142,7 +142,6 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                         },
                         body: {
                             messageId:
-                                response.lastReadMessageId ??
                                 response.messages[response.messages.length - 1]
                                     .id,
                         },
