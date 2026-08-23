@@ -1,3 +1,7 @@
 .app-shell {
   min-height: 100svh;
 }
+
+iframe {
+  display: none;
+}
