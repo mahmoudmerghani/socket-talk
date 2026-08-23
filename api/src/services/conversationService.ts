@@ -410,6 +410,7 @@ export async function getAllUserConversations(userId: number) {
                             id: true,
                             content: true,
                             sentAt: true,
+                            sequenceNumber: true,
                             sender: {
                                 select: {
                                     id: true,
@@ -431,10 +432,12 @@ export async function getAllUserConversations(userId: number) {
         const lastMessage = c.conversation.messages[0] ?? null;
 
         const unreadMessagesCount =
-            c.lastReadMessage !== null
-                ? c.conversation.sequenceCounter -
-                  c.lastReadMessage.sequenceNumber
-                : c.conversation.sequenceCounter;
+            lastMessage === null
+                ? 0
+                : c.lastReadMessage !== null
+                  ? lastMessage.sequenceNumber -
+                    c.lastReadMessage.sequenceNumber
+                  : c.conversation.sequenceCounter;
 
         switch (c.conversation.type) {
             case "DIRECT": {
