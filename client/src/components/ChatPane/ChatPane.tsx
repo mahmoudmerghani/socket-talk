@@ -5,8 +5,13 @@ import type { Conversation } from "../ConversationList/ConversationList";
 import type { AuthUser } from "../../auth/AuthContext";
 import "./ChatPane.css";
 
-type MessagesResponse = Awaited<ReturnType<typeof api<"/conversations/:conversationId/messages", "GET">>>;
-export type Message = Extract<MessagesResponse, { messages: unknown[] }>["messages"][number];
+type MessagesResponse = Awaited<
+    ReturnType<typeof api<"/conversations/:conversationId/messages", "GET">>
+>;
+export type Message = Extract<
+    MessagesResponse,
+    { messages: unknown[] }
+>["messages"][number];
 
 type ChatPaneProps = {
     conversation: Conversation;
@@ -16,16 +21,21 @@ type ChatPaneProps = {
 
 // Ensure timestamps from the server are always parsed as UTC
 function parseUtc(isoString: string): Date {
-    const s = isoString.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(isoString)
-        ? isoString
-        : isoString + "Z";
+    const s =
+        isoString.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(isoString)
+            ? isoString
+            : isoString + "Z";
     return new Date(s);
 }
 
 function formatMessageTime(isoString: string): string {
     const date = parseUtc(isoString);
     if (isNaN(date.getTime())) return "";
-    return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+    return date.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
 }
 
 function formatMessageDateSeparator(isoString: string): string {
@@ -49,12 +59,18 @@ function formatMessageDateSeparator(isoString: string): string {
 
     if (isYesterday) return "Yesterday";
 
-    return date.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
+    return date.toLocaleDateString([], {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+    });
 }
 
 export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
     const [messages, setMessages] = useState<Message[]>([]);
-    const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null);
+    const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(
+        null,
+    );
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingBefore, setIsLoadingBefore] = useState(false);
     const [isLoadingAfter, setIsLoadingAfter] = useState(false);
@@ -96,12 +112,15 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             setHasMoreBefore(true);
             setHasMoreAfter(true);
 
-            const response = await api("/conversations/:conversationId/messages", {
-                method: "GET",
-                params: {
-                    conversationId: conversation.id,
+            const response = await api(
+                "/conversations/:conversationId/messages",
+                {
+                    method: "GET",
+                    params: {
+                        conversationId: conversation.id,
+                    },
                 },
-            });
+            );
 
             if (!isMounted) return;
 
@@ -114,6 +133,21 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             if (!Array.isArray(response) && "messages" in response) {
                 setMessages(response.messages);
                 setLastReadMessageId(response.lastReadMessageId);
+
+                if (response.messages.length > 0) {
+                    api("/conversations/:conversationId/read", {
+                        method: "POST",
+                        params: {
+                            conversationId: conversation.id,
+                        },
+                        body: {
+                            messageId:
+                                response.lastReadMessageId ??
+                                response.messages[response.messages.length - 1]
+                                    .id,
+                        },
+                    });
+                }
             }
 
             setIsLoading(false);
@@ -133,13 +167,25 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                 const scrollContainer = chatScrollRef.current;
                 if (!scrollContainer) return;
 
-                if (lastReadMessageId !== null && lastReadMessageId !== undefined) {
-                    const targetEl = document.getElementById(`chat-message-${lastReadMessageId}`);
+                if (
+                    lastReadMessageId !== null &&
+                    lastReadMessageId !== undefined
+                ) {
+                    const targetEl = document.getElementById(
+                        `chat-message-${lastReadMessageId}`,
+                    );
                     if (targetEl) {
-                        const containerRect = scrollContainer.getBoundingClientRect();
+                        const containerRect =
+                            scrollContainer.getBoundingClientRect();
                         const targetRect = targetEl.getBoundingClientRect();
-                        const relativeTop = targetRect.top - containerRect.top + scrollContainer.scrollTop;
-                        scrollContainer.scrollTop = relativeTop - containerRect.height / 2 + targetRect.height / 2;
+                        const relativeTop =
+                            targetRect.top -
+                            containerRect.top +
+                            scrollContainer.scrollTop;
+                        scrollContainer.scrollTop =
+                            relativeTop -
+                            containerRect.height / 2 +
+                            targetRect.height / 2;
                         return;
                     }
                 }
@@ -189,7 +235,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
                 setMessages((prev) => {
                     const existingIds = new Set(prev.map((m) => m.id));
-                    const newMessages = response.filter((m) => !existingIds.has(m.id));
+                    const newMessages = response.filter(
+                        (m) => !existingIds.has(m.id),
+                    );
                     return [...newMessages, ...prev];
                 });
 
@@ -197,7 +245,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                     if (scrollContainer) {
                         const newScrollHeight = scrollContainer.scrollHeight;
                         scrollContainer.scrollTop =
-                            previousScrollTop + (newScrollHeight - previousScrollHeight);
+                            previousScrollTop +
+                            (newScrollHeight - previousScrollHeight);
                     }
                 });
             }
@@ -217,8 +266,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             return;
         }
 
-
-        const newestMessage = messagesRef.current[messagesRef.current.length - 1];
+        const newestMessage =
+            messagesRef.current[messagesRef.current.length - 1];
         if (!newestMessage) return;
 
         api("/conversations/:conversationId/read", {
@@ -227,8 +276,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                 conversationId: conversation.id,
             },
             body: {
-                messageId: newestMessage.id
-            }
+                messageId: newestMessage.id,
+            },
         });
 
         setIsLoadingAfter(true);
@@ -254,7 +303,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             } else {
                 setMessages((prev) => {
                     const existingIds = new Set(prev.map((m) => m.id));
-                    const newMessages = response.filter((m) => !existingIds.has(m.id));
+                    const newMessages = response.filter(
+                        (m) => !existingIds.has(m.id),
+                    );
                     return [...prev, ...newMessages];
                 });
             }
@@ -265,9 +316,15 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
     // Isolated poll fetch — does NOT touch hasMoreAfter so polling continues even on empty responses
     const pollFetch = async () => {
-        if (isPollingRef.current || isLoading || messagesRef.current.length === 0) return;
+        if (
+            isPollingRef.current ||
+            isLoading ||
+            messagesRef.current.length === 0
+        )
+            return;
 
-        const newestMessage = messagesRef.current[messagesRef.current.length - 1];
+        const newestMessage =
+            messagesRef.current[messagesRef.current.length - 1];
         if (!newestMessage) return;
 
         isPollingRef.current = true;
@@ -282,11 +339,19 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             },
         });
 
-        if (!("error" in response) && Array.isArray(response) && response.length > 0) {
+        if (
+            !("error" in response) &&
+            Array.isArray(response) &&
+            response.length > 0
+        ) {
             setMessages((prev) => {
                 const existingIds = new Set(prev.map((m) => m.id));
-                const newMessages = response.filter((m) => !existingIds.has(m.id));
-                return newMessages.length > 0 ? [...prev, ...newMessages] : prev;
+                const newMessages = response.filter(
+                    (m) => !existingIds.has(m.id),
+                );
+                return newMessages.length > 0
+                    ? [...prev, ...newMessages]
+                    : prev;
             });
             api("/conversations/:conversationId/read", {
                 method: "POST",
@@ -294,8 +359,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                     conversationId: conversation.id,
                 },
                 body: {
-                    messageId: response[response.length - 1].id
-                }
+                    messageId: response[response.length - 1].id,
+                },
             });
         }
 
@@ -324,7 +389,12 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
         const { scrollTop, scrollHeight, clientHeight } = container;
 
         // Scrolled near top
-        if (scrollTop <= 60 && hasMoreBeforeRef.current && !isLoadingBeforeRef.current && messagesRef.current.length > 0) {
+        if (
+            scrollTop <= 60 &&
+            hasMoreBeforeRef.current &&
+            !isLoadingBeforeRef.current &&
+            messagesRef.current.length > 0
+        ) {
             void fetchBeforeMessages();
         }
 
@@ -340,7 +410,8 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
     };
 
     const getChatTitle = () => {
-        if (conversation.type === "DIRECT") return conversation.otherUser.displayName;
+        if (conversation.type === "DIRECT")
+            return conversation.otherUser.displayName;
         if (conversation.type === "GROUP") return conversation.group.name;
         return "Saved Messages";
     };
@@ -352,7 +423,10 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
     };
 
     return (
-        <section className="chat-pane" aria-label={`Chat with ${getChatTitle()}`}>
+        <section
+            className="chat-pane"
+            aria-label={`Chat with ${getChatTitle()}`}
+        >
             {/* Chat Header */}
             <header className="chat-header">
                 <button
@@ -391,8 +465,16 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                             size="2.6rem"
                         />
                     ) : (
-                        <div className="saved-messages-badge-avatar small" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <div
+                            className="saved-messages-badge-avatar small"
+                            aria-hidden="true"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="currentColor"
+                            >
                                 <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
                             </svg>
                         </div>
@@ -401,12 +483,18 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
                 <div className="chat-header-info">
                     <h2 className="chat-header-title">{getChatTitle()}</h2>
-                    <span className="chat-header-subtitle">{getChatSubtitle()}</span>
+                    <span className="chat-header-subtitle">
+                        {getChatSubtitle()}
+                    </span>
                 </div>
             </header>
 
             {/* Messages Feed Area */}
-            <div className="chat-messages-scroll" ref={chatScrollRef} onScroll={handleScroll}>
+            <div
+                className="chat-messages-scroll"
+                ref={chatScrollRef}
+                onScroll={handleScroll}
+            >
                 {isLoading ? (
                     <div className="chat-messages-loading">
                         <div className="chat-loading-dots">
@@ -423,8 +511,19 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                 ) : messages.length === 0 ? (
                     <div className="chat-messages-empty">
                         <div className="chat-empty-icon">
-                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="36"
+                                height="36"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                />
                             </svg>
                         </div>
                         <h3>No messages yet</h3>
@@ -433,7 +532,10 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                 ) : (
                     <div className="chat-messages-list">
                         {isLoadingBefore ? (
-                            <div className="chat-messages-pagination-loader" aria-label="Loading older messages">
+                            <div
+                                className="chat-messages-pagination-loader"
+                                aria-label="Loading older messages"
+                            >
                                 <span />
                                 <span />
                                 <span />
@@ -441,12 +543,17 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                         ) : null}
 
                         {messages.map((message, index) => {
-                            const isOutgoing = message.sender.id === currentUser?.id;
+                            const isOutgoing =
+                                message.sender.id === currentUser?.id;
                             const prevMessage = messages[index - 1];
 
                             // Date separator logic
-                            const messageDate = new Date(message.sentAt).toDateString();
-                            const prevDate = prevMessage ? new Date(prevMessage.sentAt).toDateString() : null;
+                            const messageDate = new Date(
+                                message.sentAt,
+                            ).toDateString();
+                            const prevDate = prevMessage
+                                ? new Date(prevMessage.sentAt).toDateString()
+                                : null;
                             const showDateSeparator = messageDate !== prevDate;
 
                             return (
@@ -457,40 +564,61 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                                 >
                                     {showDateSeparator ? (
                                         <div className="chat-date-separator">
-                                            <span>{formatMessageDateSeparator(message.sentAt)}</span>
+                                            <span>
+                                                {formatMessageDateSeparator(
+                                                    message.sentAt,
+                                                )}
+                                            </span>
                                         </div>
                                     ) : null}
 
                                     <div
-                                        className={`chat-message-bubble-wrapper ${isOutgoing ? "outgoing" : "incoming"
-                                            }`}
+                                        className={`chat-message-bubble-wrapper ${
+                                            isOutgoing ? "outgoing" : "incoming"
+                                        }`}
                                     >
-                                        {!isOutgoing && conversation.type === "GROUP" ? (
+                                        {!isOutgoing &&
+                                        conversation.type === "GROUP" ? (
                                             <div className="chat-message-avatar">
                                                 <Avatar
-                                                    displayName={message.sender.displayName}
-                                                    avatarColor={message.sender.avatarColor}
-                                                    avatarUrl={message.sender.avatarUrl}
+                                                    displayName={
+                                                        message.sender
+                                                            .displayName
+                                                    }
+                                                    avatarColor={
+                                                        message.sender
+                                                            .avatarColor
+                                                    }
+                                                    avatarUrl={
+                                                        message.sender.avatarUrl
+                                                    }
                                                     size="2.1rem"
                                                 />
                                             </div>
                                         ) : null}
 
                                         <div className="chat-message-bubble">
-                                            {!isOutgoing && conversation.type === "GROUP" ? (
+                                            {!isOutgoing &&
+                                            conversation.type === "GROUP" ? (
                                                 <span
                                                     className="chat-message-sender-name"
-                                                    style={{ color: "var(--accent-strong)" }}
+                                                    style={{
+                                                        color: "var(--accent-strong)",
+                                                    }}
                                                 >
                                                     {message.sender.displayName}
                                                 </span>
                                             ) : null}
 
-                                            <div className="chat-message-text">{message.content}</div>
+                                            <div className="chat-message-text">
+                                                {message.content}
+                                            </div>
 
                                             <div className="chat-message-meta">
                                                 <span className="chat-message-time">
-                                                    {formatMessageTime(message.sentAt)}
+                                                    {formatMessageTime(
+                                                        message.sentAt,
+                                                    )}
                                                 </span>
                                             </div>
                                         </div>
@@ -500,7 +628,10 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                         })}
 
                         {isLoadingAfter ? (
-                            <div className="chat-messages-pagination-loader" aria-label="Loading newer messages">
+                            <div
+                                className="chat-messages-pagination-loader"
+                                aria-label="Loading newer messages"
+                            >
                                 <span />
                                 <span />
                                 <span />
@@ -548,12 +679,33 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                         aria-label="Send message"
                     >
                         {isSending ? (
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                <circle cx="12" cy="12" r="9" strokeOpacity="0.3" />
-                                <path d="M12 3a9 9 0 0 1 9 9" className="chat-send-spinner" />
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                    strokeOpacity="0.3"
+                                />
+                                <path
+                                    d="M12 3a9 9 0 0 1 9 9"
+                                    className="chat-send-spinner"
+                                />
                             </svg>
                         ) : (
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="currentColor"
+                            >
                                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                             </svg>
                         )}
@@ -604,7 +756,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
             setMessages((prev) => {
                 const existingIds = new Set(prev.map((m) => m.id));
-                return existingIds.has(sentMessage.id) ? prev : [...prev, sentMessage];
+                return existingIds.has(sentMessage.id)
+                    ? prev
+                    : [...prev, sentMessage];
             });
         }
 
