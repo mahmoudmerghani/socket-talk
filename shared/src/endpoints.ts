@@ -11,7 +11,6 @@ export type Bodies<Request, Response> = {
     responseBody: Response | ResError;
 };
 
-// should i include the endpoints that redirects?
 export type Endpoints = {
     "/auth/login": {
         POST: {
