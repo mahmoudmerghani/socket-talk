@@ -84,27 +84,52 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatScrollRef = useRef<HTMLDivElement>(null);
 
-    // Refs to avoid stale closures in scroll handlers
+    // Ref to avoid stale closures in polling interval
     const messagesRef = useRef(messages);
     messagesRef.current = messages;
 
-    const hasMoreBeforeRef = useRef(hasMoreBefore);
-    hasMoreBeforeRef.current = hasMoreBefore;
-
-    const hasMoreAfterRef = useRef(hasMoreAfter);
-    hasMoreAfterRef.current = hasMoreAfter;
-
-    const isLoadingBeforeRef = useRef(isLoadingBefore);
-    isLoadingBeforeRef.current = isLoadingBefore;
-
-    const isLoadingAfterRef = useRef(isLoadingAfter);
-    isLoadingAfterRef.current = isLoadingAfter;
-
     const isPollingRef = useRef(false);
+    const lastMarkedReadIdRef = useRef<number | null>(null);
+    const readDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const scheduleMarkAsRead = (messageId: number) => {
+        if (
+            lastMarkedReadIdRef.current !== null &&
+            messageId <= lastMarkedReadIdRef.current
+        ) {
+            return;
+        }
+
+        if (readDebounceTimerRef.current) {
+            clearTimeout(readDebounceTimerRef.current);
+        }
+
+        readDebounceTimerRef.current = setTimeout(() => {
+            lastMarkedReadIdRef.current = messageId;
+            void api("/conversations/:conversationId/read", {
+                method: "POST",
+                params: {
+                    conversationId: conversation.id,
+                },
+                body: {
+                    messageId,
+                },
+            });
+        }, 2000); // 2-second debounce to minimize API calls
+    };
+
+    const scheduleMarkAsReadRef = useRef(scheduleMarkAsRead);
+    scheduleMarkAsReadRef.current = scheduleMarkAsRead;
+
 
     // Initial message fetch
     useEffect(() => {
         let isMounted = true;
+
+        if (readDebounceTimerRef.current) {
+            clearTimeout(readDebounceTimerRef.current);
+        }
+        lastMarkedReadIdRef.current = null;
 
         const fetchMessages = async () => {
             setIsLoading(true);
@@ -133,20 +158,6 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             if (!Array.isArray(response) && "messages" in response) {
                 setMessages(response.messages);
                 setLastReadMessageId(response.lastReadMessageId);
-
-                if (response.messages.length > 0) {
-                    api("/conversations/:conversationId/read", {
-                        method: "POST",
-                        params: {
-                            conversationId: conversation.id,
-                        },
-                        body: {
-                            messageId:
-                                response.messages[response.messages.length - 1]
-                                    .id,
-                        },
-                    });
-                }
             }
 
             setIsLoading(false);
@@ -156,6 +167,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
         return () => {
             isMounted = false;
+            if (readDebounceTimerRef.current) {
+                clearTimeout(readDebounceTimerRef.current);
+            }
         };
     }, [conversation.id]);
 
@@ -193,18 +207,45 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
         }
     }, [isLoading, conversation.id, lastReadMessageId]);
 
+    // Mark visible messages as read using IntersectionObserver
+    useEffect(() => {
+        const root = chatScrollRef.current;
+        if (!root || isLoading || messages.length === 0) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                let highestVisibleId: number | null = null;
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        const match = entry.target.id.match(/^chat-message-(\d+)$/);
+                        if (match) {
+                            const id = parseInt(match[1], 10);
+                            if (highestVisibleId === null || id > highestVisibleId) {
+                                highestVisibleId = id;
+                            }
+                        }
+                    }
+                }
+                if (highestVisibleId !== null) {
+                    scheduleMarkAsReadRef.current(highestVisibleId);
+                }
+            },
+            { root, threshold: 0.1 }
+        );
+
+        const messageElements = root.querySelectorAll(".chat-message-row-wrapper");
+        messageElements.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
+    }, [messages, isLoading]);
+
     // Fetch older messages (before)
     const fetchBeforeMessages = async () => {
-        if (
-            !hasMoreBeforeRef.current ||
-            isLoadingBeforeRef.current ||
-            isLoading ||
-            messagesRef.current.length === 0
-        ) {
+        if (!hasMoreBefore || isLoadingBefore || isLoading || messages.length === 0) {
             return;
         }
 
-        const oldestMessage = messagesRef.current[0];
+        const oldestMessage = messages[0];
         if (!oldestMessage) return;
 
         setIsLoadingBefore(true);
@@ -256,28 +297,12 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
     // Fetch newer messages (after)
     const fetchAfterMessages = async () => {
-        if (
-            !hasMoreAfterRef.current ||
-            isLoadingAfterRef.current ||
-            isLoading ||
-            messagesRef.current.length === 0
-        ) {
+        if (!hasMoreAfter || isLoadingAfter || isLoading || messages.length === 0) {
             return;
         }
 
-        const newestMessage =
-            messagesRef.current[messagesRef.current.length - 1];
+        const newestMessage = messages[messages.length - 1];
         if (!newestMessage) return;
-
-        api("/conversations/:conversationId/read", {
-            method: "POST",
-            params: {
-                conversationId: conversation.id,
-            },
-            body: {
-                messageId: newestMessage.id,
-            },
-        });
 
         setIsLoadingAfter(true);
 
@@ -312,6 +337,20 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
         setIsLoadingAfter(false);
     };
+
+    // Auto-exhaust recent messages if the window fits without a scrollbar
+    useEffect(() => {
+        if (isLoading || isLoadingAfter || !hasMoreAfter || messages.length === 0) return;
+
+        const scrollContainer = chatScrollRef.current;
+        if (!scrollContainer) return;
+
+        const hasNoScrollbar =
+            scrollContainer.scrollHeight <= scrollContainer.clientHeight + 10;
+        if (hasNoScrollbar) {
+            void fetchAfterMessages();
+        }
+    }, [isLoading, isLoadingAfter, hasMoreAfter, messages.length]);
 
     // Isolated poll fetch — does NOT touch hasMoreAfter so polling continues even on empty responses
     const pollFetch = async () => {
@@ -352,15 +391,6 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                     ? [...prev, ...newMessages]
                     : prev;
             });
-            api("/conversations/:conversationId/read", {
-                method: "POST",
-                params: {
-                    conversationId: conversation.id,
-                },
-                body: {
-                    messageId: response[response.length - 1].id,
-                },
-            });
         }
 
         isPollingRef.current = false;
@@ -390,9 +420,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
         // Scrolled near top
         if (
             scrollTop <= 60 &&
-            hasMoreBeforeRef.current &&
-            !isLoadingBeforeRef.current &&
-            messagesRef.current.length > 0
+            hasMoreBefore &&
+            !isLoadingBefore &&
+            messages.length > 0
         ) {
             void fetchBeforeMessages();
         }
@@ -400,9 +430,9 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
         // Scrolled near bottom
         if (
             scrollHeight - scrollTop - clientHeight <= 60 &&
-            hasMoreAfterRef.current &&
-            !isLoadingAfterRef.current &&
-            messagesRef.current.length > 0
+            hasMoreAfter &&
+            !isLoadingAfter &&
+            messages.length > 0
         ) {
             void fetchAfterMessages();
         }
@@ -572,12 +602,11 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
                                     ) : null}
 
                                     <div
-                                        className={`chat-message-bubble-wrapper ${
-                                            isOutgoing ? "outgoing" : "incoming"
-                                        }`}
+                                        className={`chat-message-bubble-wrapper ${isOutgoing ? "outgoing" : "incoming"
+                                            }`}
                                     >
                                         {!isOutgoing &&
-                                        conversation.type === "GROUP" ? (
+                                            conversation.type === "GROUP" ? (
                                             <div className="chat-message-avatar">
                                                 <Avatar
                                                     displayName={
@@ -598,7 +627,7 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
                                         <div className="chat-message-bubble">
                                             {!isOutgoing &&
-                                            conversation.type === "GROUP" ? (
+                                                conversation.type === "GROUP" ? (
                                                 <span
                                                     className="chat-message-sender-name"
                                                     style={{
