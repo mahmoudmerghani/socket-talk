@@ -27,6 +27,8 @@ export function toGetAllUserConversationsResponse(
                         senderName: c.lastMessage.senderName,
                         content: c.lastMessage.content,
                         sentAt: c.lastMessage.sentAt.toISOString(),
+                        id: c.lastMessage.id,
+                        sequenceNumber: c.lastMessage.sequenceNumber,
                     },
                     otherUser: {
                         id: c.otherUser.id,
@@ -50,6 +52,8 @@ export function toGetAllUserConversationsResponse(
                         senderId: c.lastMessage.senderId,
                         senderName: c.lastMessage.senderName,
                         sentAt: c.lastMessage.sentAt.toISOString(),
+                        id: c.lastMessage.id,
+                        sequenceNumber: c.lastMessage.sequenceNumber,
                     },
                     unreadMessagesCount: c.unreadMessagesCount,
                 };

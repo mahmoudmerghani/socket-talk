@@ -8,6 +8,8 @@ type Conversation =
               senderName: string;
               content: string;
               sentAt: string;
+              id: number,
+              sequenceNumber: number
           } | null;
           otherUser: {
               id: number;
@@ -25,6 +27,8 @@ type Conversation =
               senderName: string;
               content: string;
               sentAt: string;
+              id: number,
+              sequenceNumber: number
           } | null;
           group: {
               name: string;

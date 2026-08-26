@@ -458,6 +458,8 @@ export async function getAllUserConversations(userId: number) {
                     lastMessage: lastMessage && {
                         content: lastMessage.content,
                         sentAt: lastMessage.sentAt,
+                        id: lastMessage.id,
+                        sequenceNumber: lastMessage.sequenceNumber,
                         senderId: lastMessage.sender.id,
                         senderName: lastMessage.sender.displayName,
                     },
@@ -488,6 +490,8 @@ export async function getAllUserConversations(userId: number) {
                         sentAt: lastMessage.sentAt,
                         senderId: lastMessage.sender.id,
                         senderName: lastMessage.sender.displayName,
+                        id: lastMessage.id,
+                        sequenceNumber: lastMessage.sequenceNumber,
                     },
                     group: {
                         name: group.name,
