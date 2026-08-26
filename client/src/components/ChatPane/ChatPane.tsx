@@ -17,6 +17,7 @@ type ChatPaneProps = {
     conversation: Conversation;
     currentUser: AuthUser | null;
     onBack: () => void;
+    onUpdateUnreadCount?: (conversationId: number, count: number) => void;
 };
 
 // Ensure timestamps from the server are always parsed as UTC
@@ -66,7 +67,12 @@ function formatMessageDateSeparator(isoString: string): string {
     });
 }
 
-export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
+export function ChatPane({
+    conversation,
+    currentUser,
+    onBack,
+    onUpdateUnreadCount,
+}: ChatPaneProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(
         null,
@@ -100,6 +106,16 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
             return;
         }
 
+        // Optimistically update conversation unread badge
+        const readMsg = messagesRef.current.find((m) => m.id === messageId);
+
+        if (readMsg && onUpdateUnreadCount) {
+            if (conversation.type !== "SELF" && conversation.lastMessage?.sequenceNumber !== undefined) {
+                const remaining = Math.max(0, conversation.lastMessage.sequenceNumber - readMsg.sequenceNumber);
+                onUpdateUnreadCount(conversation.id, remaining);
+            }
+        }
+
         if (readDebounceTimerRef.current) {
             clearTimeout(readDebounceTimerRef.current);
         }
@@ -120,7 +136,6 @@ export function ChatPane({ conversation, currentUser, onBack }: ChatPaneProps) {
 
     const scheduleMarkAsReadRef = useRef(scheduleMarkAsRead);
     scheduleMarkAsReadRef.current = scheduleMarkAsRead;
-
 
     // Initial message fetch
     useEffect(() => {

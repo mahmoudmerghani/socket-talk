@@ -44,6 +44,20 @@ export function HomePage() {
         setSelectedConversation(null);
     };
 
+    const handleUpdateUnreadCount = (conversationId: number, count: number) => {
+        setConversations((prev) =>
+            prev.map((c) => {
+                if (c.id === conversationId && c.type !== "SELF") {
+                    return {
+                        ...c,
+                        unreadMessagesCount: Math.max(0, count),
+                    };
+                }
+                return c;
+            })
+        );
+    };
+
     return (
         <div className={`chat-layout ${selectedConversation ? "chat-selected" : ""}`}>
             {/* Left Sidebar */}
@@ -108,6 +122,7 @@ export function HomePage() {
                         conversation={selectedConversation}
                         currentUser={user}
                         onBack={handleBackToList}
+                        onUpdateUnreadCount={handleUpdateUnreadCount}
                     />
                 ) : (
                     <div className="empty-chat-state">
