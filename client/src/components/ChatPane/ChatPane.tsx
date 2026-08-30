@@ -106,6 +106,7 @@ export function ChatPane({
             return;
         }
 
+        lastMarkedReadIdRef.current = messageId;
         // Optimistically update conversation unread badge
         const readMsg = messagesRef.current.find((m) => m.id === messageId);
 
