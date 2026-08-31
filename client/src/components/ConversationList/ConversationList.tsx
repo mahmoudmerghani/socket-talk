@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Avatar } from "../Avatar/Avatar";
 import { api } from "../../api/api";
 import "./ConversationList.css";
+import { useAuth } from "../../auth/AuthContext";
 
 type ConversationsResponse = Awaited<ReturnType<typeof api<"/conversations", "GET">>>;
 export type Conversation = Extract<ConversationsResponse, unknown[]>[number];
@@ -59,6 +60,7 @@ export function ConversationList({
     isLoading,
     error,
 }: ConversationListProps) {
+    const { user } = useAuth();
     const filteredConversations = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
         if (!query) return conversations;
@@ -171,7 +173,14 @@ export function ConversationList({
                                                 <div className="conversation-item-footer">
                                                     <span className="conversation-item-snippet">
                                                         {item.lastMessage
-                                                            ? item.lastMessage.content
+                                                            ? (
+                                                                <>
+                                                                    <span className="snippet-sender">
+                                                                        {item.lastMessage.senderId === user.id ? "You" : item.lastMessage.senderName}:
+                                                                    </span>{" "}
+                                                                    {item.lastMessage.content}
+                                                                </>
+                                                            )
                                                             : "No messages yet"}
                                                     </span>
                                                     {unread > 0 ? (
@@ -217,7 +226,7 @@ export function ConversationList({
                                                         {item.lastMessage ? (
                                                             <>
                                                                 <span className="snippet-sender">
-                                                                    {item.lastMessage.senderName}:
+                                                                    {item.lastMessage.senderId === user.id ? "You" : item.lastMessage.senderName}:
                                                                 </span>{" "}
                                                                 {item.lastMessage.content}
                                                             </>
