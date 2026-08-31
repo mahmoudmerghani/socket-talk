@@ -176,7 +176,7 @@ export function ConversationList({
                                                             ? (
                                                                 <>
                                                                     <span className="snippet-sender">
-                                                                        {item.lastMessage.senderId === user.id ? "You" : item.lastMessage.senderName}:
+                                                                        {item.lastMessage.senderId === user?.id ? "You" : item.lastMessage.senderName}:
                                                                     </span>{" "}
                                                                     {item.lastMessage.content}
                                                                 </>
@@ -226,7 +226,7 @@ export function ConversationList({
                                                         {item.lastMessage ? (
                                                             <>
                                                                 <span className="snippet-sender">
-                                                                    {item.lastMessage.senderId === user.id ? "You" : item.lastMessage.senderName}:
+                                                                    {item.lastMessage.senderId === user?.id ? "You" : item.lastMessage.senderName}:
                                                                 </span>{" "}
                                                                 {item.lastMessage.content}
                                                             </>
