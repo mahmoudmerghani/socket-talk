@@ -18,6 +18,7 @@ type ChatPaneProps = {
     currentUser: AuthUser | null;
     onBack: () => void;
     onUpdateUnreadCount?: (conversationId: number, count: number) => void;
+    onSelectUser?: (user: Message["sender"]) => void;
 };
 
 // Ensure timestamps from the server are always parsed as UTC
@@ -72,6 +73,7 @@ export function ChatPane({
     currentUser,
     onBack,
     onUpdateUnreadCount,
+    onSelectUser,
 }: ChatPaneProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(
@@ -624,34 +626,54 @@ export function ChatPane({
                                         {!isOutgoing &&
                                             conversation.type === "GROUP" ? (
                                             <div className="chat-message-avatar">
-                                                <Avatar
-                                                    displayName={
-                                                        message.sender
-                                                            .displayName
+                                                <button
+                                                    type="button"
+                                                    className="chat-message-avatar-btn"
+                                                    onClick={() =>
+                                                        onSelectUser?.(
+                                                            message.sender,
+                                                        )
                                                     }
-                                                    avatarColor={
-                                                        message.sender
-                                                            .avatarColor
-                                                    }
-                                                    avatarUrl={
-                                                        message.sender.avatarUrl
-                                                    }
-                                                    size="2.1rem"
-                                                />
+                                                    title={`Open direct message with ${message.sender.displayName}`}
+                                                    aria-label={`Open direct message with ${message.sender.displayName}`}
+                                                >
+                                                    <Avatar
+                                                        displayName={
+                                                            message.sender
+                                                                .displayName
+                                                        }
+                                                        avatarColor={
+                                                            message.sender
+                                                                .avatarColor
+                                                        }
+                                                        avatarUrl={
+                                                            message.sender
+                                                                .avatarUrl
+                                                        }
+                                                        size="2.1rem"
+                                                    />
+                                                </button>
                                             </div>
                                         ) : null}
 
                                         <div className="chat-message-bubble">
                                             {!isOutgoing &&
                                                 conversation.type === "GROUP" ? (
-                                                <span
-                                                    className="chat-message-sender-name"
+                                                <button
+                                                    type="button"
+                                                    className="chat-message-sender-name-btn"
+                                                    onClick={() =>
+                                                        onSelectUser?.(
+                                                            message.sender,
+                                                        )
+                                                    }
                                                     style={{
                                                         color: "var(--accent-strong)",
                                                     }}
+                                                    title={`Open direct message with ${message.sender.displayName}`}
                                                 >
                                                     {message.sender.displayName}
-                                                </span>
+                                                </button>
                                             ) : null}
 
                                             <div className="chat-message-text">
