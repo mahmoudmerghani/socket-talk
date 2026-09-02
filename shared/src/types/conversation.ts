@@ -8,8 +8,8 @@ type Conversation =
               senderName: string;
               content: string;
               sentAt: string;
-              id: number,
-              sequenceNumber: number
+              id: number;
+              sequenceNumber: number;
           } | null;
           otherUser: {
               id: number;
@@ -27,8 +27,8 @@ type Conversation =
               senderName: string;
               content: string;
               sentAt: string;
-              id: number,
-              sequenceNumber: number
+              id: number;
+              sequenceNumber: number;
           } | null;
           group: {
               name: string;
@@ -74,10 +74,16 @@ export type GetConversationMessagesWithoutQueryResponse = {
 };
 
 export type SendMessageToConversationResponse = {
-    id: number;
-    conversationId: number;
     content: string;
     sentAt: string;
     sequenceNumber: number;
-    senderId: number;
+    sender: {
+        id: number;
+        username: string;
+        displayName: string;
+        avatarColor: string;
+        avatarUrl: string | null;
+    };
+    id: number;
+    conversationId: number;
 };

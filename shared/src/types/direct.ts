@@ -5,10 +5,16 @@ export type GetDMResponse = {
 };
 
 export type SendMessageToUserResponse = {
-    id: number;
     content: string;
     sentAt: string;
     sequenceNumber: number;
-    senderId: number;
+    sender: {
+        id: number;
+        username: string;
+        displayName: string;
+        avatarColor: string;
+        avatarUrl: string | null;
+    };
+    id: number;
     conversationId: number;
 };

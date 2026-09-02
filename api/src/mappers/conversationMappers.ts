@@ -151,8 +151,14 @@ export function toSendMessageToConversationResponse(
         content: message.content,
         conversationId: message.conversationId,
         id: message.id,
-        senderId: message.senderId,
         sentAt: message.sentAt.toISOString(),
         sequenceNumber: message.sequenceNumber,
+        sender: {
+            avatarColor: message.sender.avatarColor,
+            avatarUrl: message.sender.avatarUrl,
+            displayName: message.sender.displayName,
+            id: message.sender.id,
+            username: message.sender.username,
+        },
     };
 }

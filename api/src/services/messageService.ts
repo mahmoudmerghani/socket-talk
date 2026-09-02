@@ -7,6 +7,7 @@ import {
 import type { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
+import { eventBus } from "../eventBus.js";
 
 export const MESSAGES_PAGE_SIZE = 50;
 
@@ -32,7 +33,7 @@ export async function updateLastReadMessage(
             throw new HttpError(400, "Bad Request");
         }
         // lastReadId can only move forward to latest messages
-        return tx.conversationParticipant.updateMany({
+        const result = await tx.conversationParticipant.updateMany({
             where: {
                 userId,
                 conversationId,
@@ -45,6 +46,14 @@ export async function updateLastReadMessage(
                 lastReadMessageId: messageId,
             },
         });
+
+        if (result.count > 0) {
+            eventBus.emit("message_read", {
+                conversationId,
+                messageId,
+                userId,
+            });
+        }
     });
 }
 
@@ -74,9 +83,27 @@ export async function sendMessageToConversation(
                 senderId,
                 conversationId,
             },
+            select: {
+                id: true,
+                content: true,
+                sentAt: true,
+                sequenceNumber: true,
+                conversationId: true,
+                sender: {
+                    select: {
+                        id: true,
+                        displayName: true,
+                        username: true,
+                        avatarColor: true,
+                        avatarUrl: true,
+                    },
+                },
+            },
         });
 
         await updateLastReadMessage(senderId, conversationId, message.id, tx);
+
+        eventBus.emit("message_created", message);
 
         return message;
     });
@@ -140,6 +167,7 @@ async function getConversationMessagesBetween(
             content: true,
             sentAt: true,
             sequenceNumber: true,
+            conversationId: true,
             sender: {
                 select: {
                     id: true,
