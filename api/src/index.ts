@@ -12,6 +12,8 @@ import { ZodError } from "zod/v4";
 import type { ErrorRequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import type { ResError } from "@socket-talk/shared";
+import { createServer } from "node:http";
+import { setupWebSocket } from "./websocket.js";
 
 const app = express();
 
@@ -62,8 +64,10 @@ const errorHandler: ErrorRequestHandler<ParamsDictionary, ResError> = (
 
 app.use(errorHandler);
 
-app.listen(process.env.PORT, (err) => {
-    if (err) throw err;
+const server = createServer(app);
 
+setupWebSocket(server);
+
+server.listen(process.env.PORT, () => {
     console.log("Running on: " + process.env.PORT);
 });
