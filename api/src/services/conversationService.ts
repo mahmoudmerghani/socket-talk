@@ -549,6 +549,14 @@ export async function requireGroupAdmin(
     return group;
 }
 
+export async function getConversationParticipants(conversationId: number) {
+    return prisma.conversationParticipant.findMany({
+        where: {
+            conversationId,
+        },
+    });
+}
+
 export type Conversations = Awaited<ReturnType<typeof getAllUserConversations>>;
 export type Groups = Awaited<ReturnType<typeof getAllGroups>>;
 export type GroupInfo = Awaited<ReturnType<typeof getGroupInfo>>;

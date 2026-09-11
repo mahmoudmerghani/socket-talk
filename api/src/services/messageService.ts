@@ -17,7 +17,7 @@ export async function updateLastReadMessage(
     messageId: number,
     tx?: Prisma.TransactionClient,
 ) {
-    return withTransaction(tx, async (tx) => {
+    const { count } = await withTransaction(tx, async (tx) => {
         await requireConversationParticipant(userId, conversationId, tx);
 
         const message = await tx.message.findUnique({
@@ -47,14 +47,16 @@ export async function updateLastReadMessage(
             },
         });
 
-        if (result.count > 0) {
-            eventBus.emit("message_read", {
-                conversationId,
-                messageId,
-                userId,
-            });
-        }
+        return result;
     });
+
+    if (count > 0) {
+        eventBus.emit("message_read", {
+            conversationId,
+            messageId,
+            userId,
+        });
+    }
 }
 
 // generic sendTo
@@ -64,7 +66,7 @@ export async function sendMessageToConversation(
     messageData: CreateMessageRequest,
     tx?: Prisma.TransactionClient,
 ) {
-    return withTransaction(tx, async (tx) => {
+    const message = await withTransaction(tx, async (tx) => {
         await requireConversationParticipant(senderId, conversationId, tx);
 
         const { sequenceCounter } = await tx.conversation.update({
@@ -103,10 +105,12 @@ export async function sendMessageToConversation(
 
         await updateLastReadMessage(senderId, conversationId, message.id, tx);
 
-        eventBus.emit("message_created", message);
-
         return message;
     });
+
+    eventBus.emit("message_created", message);
+
+    return message;
 }
 
 export async function sendMessageToUser(

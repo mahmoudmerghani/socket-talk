@@ -2,6 +2,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import { parse } from "cookie";
 import { getAuthenticatedUser } from "./services/authService.js";
 import type { Server } from "node:http";
+import { eventBus } from "./eventBus.js";
+import { getConversationParticipants } from "./services/conversationService.js";
 
 const wss = new WebSocketServer({ noServer: true });
 const clients = new Map<number, Set<WebSocket>>();
@@ -62,7 +64,7 @@ wss.on("connection", (ws, req) => {
     }, 60 * 1000);
 
     const intervalId = setInterval(() => {
-        if (ws.readyState === ws.OPEN) {
+        if (ws.readyState === WebSocket.OPEN) {
             ws.ping();
         }
     }, 30 * 1000);
@@ -91,3 +93,30 @@ wss.on("connection", (ws, req) => {
         console.error(err);
     });
 });
+
+async function broadcastToConversation(conversationId: number, payload: any) {
+    const conversationParticipants =
+        await getConversationParticipants(conversationId);
+
+    for (const p of conversationParticipants) {
+        for (const userSocket of clients.get(p.userId) ?? []) {
+            if (userSocket.readyState === WebSocket.OPEN) {
+                userSocket.send(JSON.stringify(payload));
+            }
+        }
+    }
+}
+
+eventBus.on("message_created", (message) =>
+    broadcastToConversation(message.conversationId, {
+        type: "new_message",
+        data: message,
+    }),
+);
+
+eventBus.on("message_read", (data) =>
+    broadcastToConversation(data.conversationId, {
+        type: "message_read",
+        data,
+    }),
+);
