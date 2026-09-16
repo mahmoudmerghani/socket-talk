@@ -8,7 +8,9 @@ export const createMessageSchema = z.object({
         .max(5000, {
             error: "Message content must be at most 5000 characters.",
         }),
+
+    clientMessageId: z
+        .uuid({ error: "clientId must be a valid UUID." }),
 });
 
 export type CreateMessageRequest = z.infer<typeof createMessageSchema>;
-

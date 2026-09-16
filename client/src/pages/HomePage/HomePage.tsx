@@ -2,18 +2,26 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
-import { ConversationList, type Conversation } from "../../components/ConversationList/ConversationList";
+import {
+    ConversationList,
+    type Conversation,
+} from "../../components/ConversationList/ConversationList";
 import { ChatPane, type Message } from "../../components/ChatPane/ChatPane";
 import "./HomePage.css";
 
 export function HomePage() {
     const { user, clearAuthenticatedUser } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-    const [pendingDirectUser, setPendingDirectUser] = useState<Message["sender"] | null>(null);
+    const [selectedConversation, setSelectedConversation] =
+        useState<Conversation | null>(null);
+    const [pendingDirectUser, setPendingDirectUser] = useState<
+        Message["sender"] | null
+    >(null);
     const [pendingInputText, setPendingInputText] = useState("");
     const [isCreatingDirect, setIsCreatingDirect] = useState(false);
-    const [pendingSendError, setPendingSendError] = useState<string | null>(null);
+    const [pendingSendError, setPendingSendError] = useState<string | null>(
+        null,
+    );
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,6 +43,28 @@ export function HomePage() {
 
             setConversations(response);
             setIsLoading(false);
+        };
+
+        const ws = new WebSocket(import.meta.env.VITE_WS_URL);
+
+        ws.onopen = (e) => {
+            console.log("connected");
+            console.log(e);
+        };
+
+        ws.onmessage = (e) => {
+            console.log("received:");
+            console.log(e);
+            console.log(JSON.parse(e.data));
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = (e) => {
+            console.log("closed");
+            console.log(e);
         };
 
         void fetchConversations();
@@ -68,7 +98,7 @@ export function HomePage() {
         }
 
         const matchedConv = conversations.find(
-            (c) => c.type === "DIRECT" && c.otherUser.id === targetUser.id
+            (c) => c.type === "DIRECT" && c.otherUser.id === targetUser.id,
         );
 
         if (matchedConv) {
@@ -81,7 +111,11 @@ export function HomePage() {
     };
 
     const handleSendFirstDirectMessage = async () => {
-        if (!pendingDirectUser || !pendingInputText.trim() || isCreatingDirect) {
+        if (
+            !pendingDirectUser ||
+            !pendingInputText.trim() ||
+            isCreatingDirect
+        ) {
             return;
         }
 
@@ -119,7 +153,7 @@ export function HomePage() {
                 content: response.content,
                 sentAt: response.sentAt,
                 sequenceNumber: response.sequenceNumber,
-                senderId: response.senderId,
+                senderId: response.sender.id,
                 senderName: user?.displayName ?? "",
             },
             unreadMessagesCount: 0,
@@ -142,12 +176,14 @@ export function HomePage() {
                     };
                 }
                 return c;
-            })
+            }),
         );
     };
 
     return (
-        <div className={`chat-layout ${selectedConversation || pendingDirectUser ? "chat-selected" : ""}`}>
+        <div
+            className={`chat-layout ${selectedConversation || pendingDirectUser ? "chat-selected" : ""}`}
+        >
             {/* Left Sidebar */}
             <div className="chat-layout-sidebar">
                 <header className="sidebar-header">
@@ -161,8 +197,12 @@ export function HomePage() {
                             />
                         ) : null}
                         <div className="sidebar-user-info">
-                            <span className="sidebar-user-name">{user?.displayName}</span>
-                            <span className="sidebar-user-handle">@{user?.username}</span>
+                            <span className="sidebar-user-name">
+                                {user?.displayName}
+                            </span>
+                            <span className="sidebar-user-handle">
+                                @{user?.username}
+                            </span>
                         </div>
                     </div>
 
@@ -289,7 +329,9 @@ export function HomePage() {
                         {/* Input Bottom Bar */}
                         <footer className="chat-input-bar">
                             {pendingSendError ? (
-                                <p className="chat-send-error">{pendingSendError}</p>
+                                <p className="chat-send-error">
+                                    {pendingSendError}
+                                </p>
                             ) : null}
                             <form
                                 className="chat-input-form"
@@ -305,7 +347,8 @@ export function HomePage() {
                                     value={pendingInputText}
                                     onChange={(e) => {
                                         setPendingInputText(e.target.value);
-                                        if (pendingSendError) setPendingSendError(null);
+                                        if (pendingSendError)
+                                            setPendingSendError(null);
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" && !e.shiftKey) {
@@ -319,7 +362,10 @@ export function HomePage() {
                                 <button
                                     type="submit"
                                     className="chat-send-button"
-                                    disabled={!pendingInputText.trim() || isCreatingDirect}
+                                    disabled={
+                                        !pendingInputText.trim() ||
+                                        isCreatingDirect
+                                    }
                                     aria-label="Send message"
                                 >
                                     {isCreatingDirect ? (
@@ -354,7 +400,12 @@ export function HomePage() {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         >
-                                            <line x1="22" y1="2" x2="11" y2="13" />
+                                            <line
+                                                x1="22"
+                                                y1="2"
+                                                x2="11"
+                                                y2="13"
+                                            />
                                             <polygon points="22 2 15 22 11 13 2 9 22 2" />
                                         </svg>
                                     )}
@@ -365,12 +416,26 @@ export function HomePage() {
                 ) : (
                     <div className="empty-chat-state">
                         <div className="empty-chat-illustration">
-                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="48"
+                                height="48"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                />
                             </svg>
                         </div>
                         <h2>Select a chat</h2>
-                        <p>Choose a conversation from the left to start messaging</p>
+                        <p>
+                            Choose a conversation from the left to start
+                            messaging
+                        </p>
                     </div>
                 )}
             </main>

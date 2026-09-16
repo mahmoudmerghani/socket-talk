@@ -2,7 +2,7 @@ import type { Message } from "./services/messageService.js";
 import EventEmitter from "node:events";
 
 type EventMap = {
-    message_created: Message;
+    message_created: Message & { clientMessageId: string };
     message_read: {
         userId: number;
         conversationId: number;

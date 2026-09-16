@@ -108,7 +108,10 @@ export async function sendMessageToConversation(
         return message;
     });
 
-    eventBus.emit("message_created", message);
+    eventBus.emit("message_created", {
+        ...message,
+        clientMessageId: messageData.clientMessageId,
+    });
 
     return message;
 }
