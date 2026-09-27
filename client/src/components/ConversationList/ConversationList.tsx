@@ -227,7 +227,7 @@ export function ConversationList({
                                                             <>
                                                                 <span className="snippet-sender">
                                                                     {item.lastMessage.senderId === user?.id ? "You" : item.lastMessage.senderName}:
-                                                                </span>{" "}
+                                                                </span>{" "}``
                                                                 {item.lastMessage.content}
                                                             </>
                                                         ) : (

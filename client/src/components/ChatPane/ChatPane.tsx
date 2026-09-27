@@ -788,10 +788,12 @@ export function ChatPane({
         setIsSending(true);
         setSendError(null);
 
+        const clientMessageId = crypto.randomUUID();
+
         const response = await api("/conversations/:conversationId/messages", {
             method: "POST",
             params: { conversationId: conversation.id },
-            body: { content },
+            body: { content, clientMessageId },
         });
 
         setIsSending(false);

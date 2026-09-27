@@ -7,6 +7,7 @@ import {
     type Conversation,
 } from "../../components/ConversationList/ConversationList";
 import { ChatPane, type Message } from "../../components/ChatPane/ChatPane";
+import type { ServerMessage } from "@socket-talk/shared";
 import "./HomePage.css";
 
 export function HomePage() {
@@ -45,29 +46,61 @@ export function HomePage() {
             setIsLoading(false);
         };
 
-        const ws = new WebSocket(import.meta.env.VITE_WS_URL);
-
-        ws.onopen = (e) => {
-            console.log("connected");
-            console.log(e);
-        };
-
-        ws.onmessage = (e) => {
-            console.log("received:");
-            console.log(e);
-            console.log(JSON.parse(e.data));
-        };
-
-        ws.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-
-        ws.onclose = (e) => {
-            console.log("closed");
-            console.log(e);
-        };
-
         void fetchConversations();
+    }, []);
+
+    useEffect(() => {
+        const wsUrl = import.meta.env.VITE_WS_URL;
+        if (!wsUrl) return;
+
+        let ws: WebSocket | null = null;
+        let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+        let isDisposed = false;
+
+        const connect = () => {
+            if (isDisposed) return;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = (e) => {
+                console.log("WebSocket connected:", e);
+            };
+
+            ws.onmessage = (e) => {
+                try {
+                    const message = JSON.parse(e.data) as ServerMessage;
+                    console.log("WebSocket message received:", message);
+                } catch (err) {
+                    console.error("Failed to parse WebSocket message:", err);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+
+            ws.onclose = (e) => {
+                console.log("WebSocket closed:", e);
+                ws = null;
+
+                if (!isDisposed) {
+                    console.log("Reconnecting WebSocket in 5s...");
+                    reconnectTimeout = setTimeout(connect, 5000);
+                }
+            };
+        };
+
+        connect();
+
+        return () => {
+            isDisposed = true;
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+            if (ws) {
+                ws.close(1000, "Component unmounted");
+            }
+        };
     }, []);
 
     const handleSelectConversation = (conv: Conversation) => {
@@ -123,6 +156,8 @@ export function HomePage() {
         setIsCreatingDirect(true);
         setPendingSendError(null);
 
+        const clientMessageId = crypto.randomUUID();
+
         const response = await api("/directs/:userId/messages", {
             method: "POST",
             params: {
@@ -130,6 +165,7 @@ export function HomePage() {
             },
             body: {
                 content,
+                clientMessageId,
             },
         });
 
