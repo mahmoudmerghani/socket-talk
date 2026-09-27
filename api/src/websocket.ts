@@ -1,9 +1,11 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { parse } from "cookie";
 import { getAuthenticatedUser } from "./services/authService.js";
-import type { Server } from "node:http";
 import { eventBus } from "./eventBus.js";
 import { getConversationParticipants } from "./services/conversationService.js";
+import type { Server } from "node:http";
+import type { ServerMessage } from "@socket-talk/shared";
+import type { ToJson } from "./utils/jsonTypes.js";
 
 const wss = new WebSocketServer({ noServer: true });
 const clients = new Map<number, Set<WebSocket>>();
@@ -107,16 +109,26 @@ async function broadcastToConversation(conversationId: number, payload: any) {
     }
 }
 
-eventBus.on("message_created", (message) =>
-    broadcastToConversation(message.conversationId, {
-        type: "new_message",
-        data: message,
-    }),
-);
-
-eventBus.on("message_read", (data) =>
-    broadcastToConversation(data.conversationId, {
-        type: "message_read",
+eventBus.on("message_created", (data) => {
+    const message = {
+        type: "new_message" as const,
         data,
-    }),
-);
+    };
+
+    broadcastToConversation(
+        data.conversationId,
+        message as unknown as ToJson<typeof message> satisfies Extract<
+            ServerMessage,
+            { type: "new_message" }
+        >,
+    );
+});
+
+eventBus.on("message_read", (data) => {
+    const message = {
+        type: "message_read" as const,
+        data,
+    } satisfies Extract<ServerMessage, { type: "message_read" }>;
+
+    broadcastToConversation(data.conversationId, message);
+});

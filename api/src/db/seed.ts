@@ -49,6 +49,7 @@ async function main() {
                         conversation.id,
                         {
                             content: `Message #${i + 1}`,
+                            clientMessageId: crypto.randomUUID(),
                         },
                         tx,
                     ),
