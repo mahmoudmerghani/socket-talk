@@ -4,7 +4,7 @@ import {
     getOrCreateDM,
     requireConversationParticipant,
 } from "./conversationService.js";
-import type { Prisma } from "../../generated/prisma/client.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 import { eventBus } from "../eventBus.js";
@@ -201,13 +201,41 @@ export async function getConversationMessagesAroundCursor(
     const lowerBound = cursor - Math.floor(MESSAGES_PAGE_SIZE / 2) + 1;
     const upperBound = cursor + Math.floor(MESSAGES_PAGE_SIZE / 2);
 
-    const messages = await getConversationMessagesBetween(
+    const messagesPromise = getConversationMessagesBetween(
         conversationId,
         lowerBound,
         upperBound,
     );
 
-    return messages;
+    const firstBeforePromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                lt: lowerBound,
+            },
+        },
+    });
+
+    const firstAfterPromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                gt: upperBound,
+            },
+        },
+    });
+
+    const [messages, firstBefore, firstAfter] = await Promise.all([
+        messagesPromise,
+        firstBeforePromise,
+        firstAfterPromise,
+    ]);
+
+    return {
+        messages,
+        hasBefore: firstBefore !== null,
+        hasAfter: firstAfter !== null,
+    };
 }
 
 export async function getConversationMessagesBeforeCursor(
@@ -220,13 +248,27 @@ export async function getConversationMessagesBeforeCursor(
     const lowerBound = cursor - MESSAGES_PAGE_SIZE;
     const upperBound = cursor - 1;
 
-    const messages = await getConversationMessagesBetween(
+    const messagesPromise = getConversationMessagesBetween(
         conversationId,
         lowerBound,
         upperBound,
     );
 
-    return messages;
+    const firstBeforePromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                lt: lowerBound,
+            },
+        },
+    });
+
+    const [messages, firstBefore] = await Promise.all([
+        messagesPromise,
+        firstBeforePromise,
+    ]);
+
+    return { messages, hasBefore: firstBefore !== null };
 }
 
 export async function getConversationMessagesAfterCursor(
@@ -239,13 +281,27 @@ export async function getConversationMessagesAfterCursor(
     const lowerBound = cursor + 1;
     const upperBound = cursor + MESSAGES_PAGE_SIZE;
 
-    const messages = await getConversationMessagesBetween(
+    const messagesPromise = getConversationMessagesBetween(
         conversationId,
         lowerBound,
         upperBound,
     );
 
-    return messages;
+    const firstAfterPromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                gt: upperBound,
+            },
+        },
+    });
+
+    const [messages, firstAfter] = await Promise.all([
+        messagesPromise,
+        firstAfterPromise,
+    ]);
+
+    return { messages, hasAfter: firstAfter !== null };
 }
 
 // initial messages when user opens a conversation
@@ -275,15 +331,42 @@ export async function getConversationMessagesAroundLastReadMessage(
             lastReadMessageSequence + Math.floor(MESSAGES_PAGE_SIZE / 2);
     }
 
-    const [messages, othersLastReadMessageIds] = await Promise.all([
-        getConversationMessagesBetween(conversationId, lowerBound, upperBound),
-        getConversationParticipantsLastReadMessageIds(conversationId),
-    ]);
+    const firstBeforePromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                lt: lowerBound,
+            },
+        },
+    });
+
+    const firstAfterPromise = prisma.message.findFirst({
+        where: {
+            conversationId,
+            sequenceNumber: {
+                gt: upperBound,
+            },
+        },
+    });
+
+    const [messages, othersLastReadMessageIds, firstBefore, firstAfter] =
+        await Promise.all([
+            getConversationMessagesBetween(
+                conversationId,
+                lowerBound,
+                upperBound,
+            ),
+            getConversationParticipantsLastReadMessageIds(conversationId),
+            firstBeforePromise,
+            firstAfterPromise,
+        ]);
 
     return {
         messages,
         othersLastReadMessageIds,
         lastReadMessageId: lastReadMessage?.id ?? null,
+        hasBefore: firstBefore !== null,
+        hasAfter: firstAfter !== null,
     };
 }
 
@@ -291,7 +374,12 @@ export type ConversationMessagesWithoutQuery = Awaited<
     ReturnType<typeof getConversationMessagesAroundLastReadMessage>
 >;
 
-export type ConversationMessagesWithQuery =
-    ConversationMessagesWithoutQuery["messages"];
+export type ConversationMessagesWithQuery = {
+    messages: Awaited<
+        ReturnType<typeof getConversationMessagesAfterCursor>
+    >["messages"];
+    hasMoreAfter?: boolean;
+    hasMoreBefore?: boolean;
+};
 
 export type Message = Awaited<ReturnType<typeof sendMessageToConversation>>;

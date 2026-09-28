@@ -74,21 +74,14 @@ export function toGetAllUserConversationsResponse(
 export function toGetConversationMessagesWithoutQueryResponse(
     messagesObj: ConversationMessagesWithoutQuery,
 ): SuccessResBodyOf<"/conversations/:conversationId/messages", "GET"> {
-    type MessagesElement =
-        SuccessResBodyOf<
-            "/conversations/:conversationId/messages",
-            "GET"
-        > extends object | Array<infer M>
-            ? M
-            : never;
+    type MessagesElement = ReturnType<
+        typeof toGetConversationMessagesWithoutQueryResponse
+    >["messages"][number];
 
-    type OthersLastReadMessageIdsArray =
-        SuccessResBodyOf<
-            "/conversations/:conversationId/messages",
-            "GET"
-        > extends { othersLastReadMessageIds: infer O } | Array<any>
-            ? O
-            : never;
+    type OthersLastReadMessageIdsArray = Extract<
+        ReturnType<typeof toGetConversationMessagesWithoutQueryResponse>,
+        { othersLastReadMessageIds: unknown }
+    >["othersLastReadMessageIds"];
 
     return {
         lastReadMessageId: messagesObj.lastReadMessageId,
@@ -117,31 +110,35 @@ export function toGetConversationMessagesWithoutQueryResponse(
 }
 
 export function toGetConversationMessagesWithQueryResponse(
-    messagesArray: ConversationMessagesWithQuery,
+    messagesObj: ConversationMessagesWithQuery,
 ): SuccessResBodyOf<"/conversations/:conversationId/messages", "GET"> {
-    type MessagesElement =
-        SuccessResBodyOf<
-            "/conversations/:conversationId/messages",
-            "GET"
-        > extends object | Array<infer M>
-            ? M
-            : never;
+    type MessagesElement = ReturnType<
+        typeof toGetConversationMessagesWithQueryResponse
+    >["messages"][number];
 
-    return messagesArray.map(
-        (m): MessagesElement => ({
-            content: m.content,
-            id: m.id,
-            sender: {
-                avatarColor: m.sender.avatarColor,
-                avatarUrl: m.sender.avatarUrl,
-                displayName: m.sender.displayName,
-                id: m.sender.id,
-                username: m.sender.username,
-            },
-            sentAt: m.sentAt.toISOString(),
-            sequenceNumber: m.sequenceNumber,
-        }),
-    );
+    return {
+        messages: messagesObj.messages.map(
+            (m): MessagesElement => ({
+                content: m.content,
+                id: m.id,
+                sender: {
+                    avatarColor: m.sender.avatarColor,
+                    avatarUrl: m.sender.avatarUrl,
+                    displayName: m.sender.displayName,
+                    id: m.sender.id,
+                    username: m.sender.username,
+                },
+                sentAt: m.sentAt.toISOString(),
+                sequenceNumber: m.sequenceNumber,
+            }),
+        ),
+        ...(messagesObj.hasMoreAfter !== undefined
+            ? { hasMoreAfter: messagesObj.hasMoreAfter }
+            : {}),
+        ...(messagesObj.hasMoreBefore !== undefined
+            ? { hasMoreBefore: messagesObj.hasMoreBefore }
+            : {}),
+    };
 }
 
 export function toSendMessageToConversationResponse(

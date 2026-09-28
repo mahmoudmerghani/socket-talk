@@ -45,7 +45,7 @@ type Conversation =
           } | null;
       };
 
-type GetMessagesBase = {
+type Message = {
     id: number;
     content: string;
     sentAt: string;
@@ -57,20 +57,26 @@ type GetMessagesBase = {
         avatarColor: string;
         avatarUrl: string | null;
     };
-}[];
+};
 
 export type GetAllUserConversationsResponse = Conversation[];
 
-export type GetConversationMessagesWithQueryResponse = GetMessagesBase;
+export type GetConversationMessagesWithQueryResponse = {
+    messages: Message[];
+    hasMoreAfter?: boolean;
+    hasMoreBefore?: boolean;
+};
 
 // for /conversations/:id/messages without a query
 export type GetConversationMessagesWithoutQueryResponse = {
-    messages: GetMessagesBase;
+    messages: Message[];
     othersLastReadMessageIds: {
         userId: number;
         lastReadMessageId: number | null;
     }[];
     lastReadMessageId: number | null;
+    hasMoreBefore: boolean;
+    hasMoreAfter: boolean;
 };
 
 export type SendMessageToConversationResponse = {
