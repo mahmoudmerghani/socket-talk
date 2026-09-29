@@ -8,6 +8,39 @@ type EventMap = {
         conversationId: number;
         messageId: number;
     };
+    dm_created: {
+        dm: {
+            conversationId: number;
+            user1: {
+                id: number;
+                username: string;
+                displayName: string;
+                avatarColor: string;
+                avatarUrl: string | null;
+            };
+            user2: {
+                id: number;
+                username: string;
+                displayName: string;
+                avatarColor: string;
+                avatarUrl: string | null;
+            };
+        };
+        firstMessage: {
+            content: string;
+            sentAt: Date;
+            sequenceNumber: number;
+            sender: {
+                id: number;
+                username: string;
+                displayName: string;
+                avatarColor: string;
+                avatarUrl: string | null;
+            };
+            id: number;
+            conversationId: number;
+        };
+    };
 };
 
 class TypedEventEmitter extends EventEmitter {

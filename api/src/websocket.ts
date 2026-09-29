@@ -97,15 +97,23 @@ wss.on("connection", (ws, req) => {
 });
 
 async function broadcastToConversation(conversationId: number, payload: any) {
-    const conversationParticipants =
-        await getConversationParticipants(conversationId);
+    try {
+        const conversationParticipants =
+            await getConversationParticipants(conversationId);
 
-    for (const p of conversationParticipants) {
-        for (const userSocket of clients.get(p.userId) ?? []) {
-            if (userSocket.readyState === WebSocket.OPEN) {
-                userSocket.send(JSON.stringify(payload));
+        for (const p of conversationParticipants) {
+            for (const userSocket of clients.get(p.userId) ?? []) {
+                if (userSocket.readyState === WebSocket.OPEN) {
+                    userSocket.send(JSON.stringify(payload));
+                }
             }
         }
+    } catch (e) {
+        console.error("Broadcast error", {
+            conversationId,
+            payload,
+            error: e,
+        });
     }
 }
 
@@ -131,4 +139,19 @@ eventBus.on("message_read", (data) => {
     } satisfies Extract<ServerMessage, { type: "message_read" }>;
 
     broadcastToConversation(data.conversationId, message);
+});
+
+eventBus.on("dm_created", (data) => {
+    const message = {
+        type: "new_dm" as const,
+        data,
+    };
+
+    broadcastToConversation(
+        data.dm.conversationId,
+        message as unknown as ToJson<typeof message> satisfies Extract<
+            ServerMessage,
+            { type: "new_dm" }
+        >,
+    );
 });

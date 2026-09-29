@@ -8,6 +8,7 @@ import { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 import { eventBus } from "../eventBus.js";
+import { getUserById } from "./userService.js";
 
 export const MESSAGES_PAGE_SIZE = 50;
 
@@ -64,6 +65,7 @@ export async function sendMessageToConversation(
     senderId: number,
     conversationId: number,
     messageData: CreateMessageRequest,
+    emitEvent: boolean = true,
     tx?: Prisma.TransactionClient,
 ) {
     const message = await withTransaction(tx, async (tx) => {
@@ -108,10 +110,12 @@ export async function sendMessageToConversation(
         return message;
     });
 
-    eventBus.emit("message_created", {
-        ...message,
-        clientMessageId: messageData.clientMessageId,
-    });
+    if (emitEvent) {
+        eventBus.emit("message_created", {
+            ...message,
+            clientMessageId: messageData.clientMessageId,
+        });
+    }
 
     return message;
 }
@@ -122,16 +126,33 @@ export async function sendMessageToUser(
     messageData: CreateMessageRequest,
     tx?: Prisma.TransactionClient,
 ) {
-    return withTransaction(tx, async (tx) => {
-        const DM = await getOrCreateDM(senderId, receiverId, tx);
+    const { message, dm, isNew } = await withTransaction(tx, async (tx) => {
+        const { dm, isNew } = await getOrCreateDM(senderId, receiverId, tx);
 
-        return sendMessageToConversation(
+        const message = await sendMessageToConversation(
             senderId,
-            DM.conversationId,
+            dm.conversationId,
             messageData,
+            !isNew,
             tx,
         );
+
+        return { message, dm, isNew };
     });
+
+    if (isNew) {
+        const [user1, user2] = await Promise.all([
+            getUserById(dm.userId1),
+            getUserById(dm.userId2),
+        ]);
+
+        eventBus.emit("dm_created", {
+            firstMessage: message,
+            dm: { conversationId: dm.conversationId, user1, user2 },
+        });
+    }
+
+    return message;
 }
 
 async function getConversationParticipantsLastReadMessageIds(

@@ -89,6 +89,7 @@ export function toGetConversationMessagesWithoutQueryResponse(
             (m): MessagesElement => ({
                 content: m.content,
                 id: m.id,
+                conversationId: m.conversationId,
                 sender: {
                     avatarColor: m.sender.avatarColor,
                     avatarUrl: m.sender.avatarUrl,
@@ -121,6 +122,7 @@ export function toGetConversationMessagesWithQueryResponse(
             (m): MessagesElement => ({
                 content: m.content,
                 id: m.id,
+                conversationId: m.conversationId,
                 sender: {
                     avatarColor: m.sender.avatarColor,
                     avatarUrl: m.sender.avatarUrl,

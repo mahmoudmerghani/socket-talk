@@ -51,6 +51,7 @@ async function main() {
                             content: `Message #${i + 1}`,
                             clientMessageId: crypto.randomUUID(),
                         },
+                        true,
                         tx,
                     ),
                 );

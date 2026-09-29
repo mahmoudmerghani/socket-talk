@@ -259,7 +259,7 @@ export async function getOrCreateDM(
 
     try {
         const existingDm = await getDM(userId1, userId2);
-        return existingDm;
+        return { dm: existingDm, isNew: false };
     } catch (err) {
         if (err instanceof HttpError && err.status === 404) {
             // order ids to guarantee that no other DM exists with the reverse order
@@ -296,7 +296,7 @@ export async function getOrCreateDM(
                     },
                 });
 
-                return DM;
+                return { dm: DM, isNew: true };
             });
         } else {
             throw err;
