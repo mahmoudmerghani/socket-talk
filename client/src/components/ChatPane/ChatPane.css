@@ -255,6 +255,26 @@
   color: rgba(215, 228, 239, 0.75);
 }
 
+.chat-message-status-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+  margin-left: 0.15rem;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.chat-message-status-icon.sent {
+  color: rgba(215, 228, 239, 0.6);
+}
+
+.chat-message-status-icon.read-some {
+  color: rgba(215, 228, 239, 0.75);
+}
+
+.chat-message-status-icon.read-all {
+  color: #53bdeb;
+}
+
 /* Loading & Empty States */
 .chat-messages-loading,
 .chat-messages-empty,

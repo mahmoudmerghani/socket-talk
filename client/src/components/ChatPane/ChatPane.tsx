@@ -70,6 +70,53 @@ function formatMessageDateSeparator(isoString: string): string {
     });
 }
 
+function MessageStatusIcon({
+    status,
+    title,
+}: {
+    status: "SENT" | "SOME_READ" | "ALL_READ";
+    title?: string;
+}) {
+    if (status === "SENT") {
+        return (
+            <svg
+                className="chat-message-status-icon sent"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                title={title}
+                aria-label={title}
+            >
+                <path d="M3.5 8.5l3 3 6.5-6.5" />
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            className={`chat-message-status-icon ${status === "ALL_READ" ? "read-all" : "read-some"}`}
+            viewBox="0 0 20 16"
+            width="17"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            title={title}
+            aria-label={title}
+        >
+            <path d="M1.5 8.5l3 3 6.5-6.5" />
+            <path d="M7 8.5l3 3 6.5-6.5" />
+        </svg>
+    );
+}
+
 export function ChatPane({
     conversation,
     currentUser,
@@ -81,6 +128,9 @@ export function ChatPane({
     const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(
         null,
     );
+    const [readReceipts, setReadReceipts] = useState<
+        Record<number, number | null>
+    >({});
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingBefore, setIsLoadingBefore] = useState(false);
     const [isLoadingAfter, setIsLoadingAfter] = useState(false);
@@ -203,14 +253,27 @@ export function ChatPane({
         }
     };
 
-    // Listen to WebSocket new_message events
+    // Listen to WebSocket new_message and message_read events
     useEffect(() => {
         return addWsListener((msg: ServerMessage) => {
             if (msg.type === "new_message") {
                 handleIncomingWsMessage(msg.data);
+            } else if (msg.type === "message_read") {
+                const { userId, conversationId, messageId } = msg.data;
+                if (conversationId === conversation.id) {
+                    setReadReceipts((prev) => ({
+                        ...prev,
+                        [userId]: Math.max(prev[userId] ?? 0, messageId),
+                    }));
+                    if (currentUser && userId === currentUser.id) {
+                        setLastReadMessageId((prev) =>
+                            Math.max(prev ?? 0, messageId),
+                        );
+                    }
+                }
             }
         });
-    }, [conversation.id]);
+    }, [conversation.id, currentUser?.id]);
 
     // Initial message fetch
     useEffect(() => {
@@ -221,6 +284,7 @@ export function ChatPane({
         }
         lastMarkedReadIdRef.current = null;
         wsBufferRef.current = [];
+        setReadReceipts({});
 
         const fetchMessages = async () => {
             setIsLoading(true);
@@ -250,6 +314,16 @@ export function ChatPane({
                 setMessages(response.messages);
                 if ("lastReadMessageId" in response) {
                     setLastReadMessageId(response.lastReadMessageId);
+                }
+                if (
+                    "othersLastReadMessageIds" in response &&
+                    Array.isArray(response.othersLastReadMessageIds)
+                ) {
+                    const receipts: Record<number, number | null> = {};
+                    for (const item of response.othersLastReadMessageIds) {
+                        receipts[item.userId] = item.lastReadMessageId;
+                    }
+                    setReadReceipts(receipts);
                 }
                 if (response.hasMoreBefore !== undefined) {
                     setHasMoreBefore(response.hasMoreBefore);
@@ -496,6 +570,53 @@ export function ChatPane({
         }
     };
 
+    const getMessageDeliveryStatus = (messageId: number) => {
+        if (conversation.type === "SELF") {
+            return { status: "SENT" as const, title: "Saved message" };
+        }
+
+        if (conversation.type === "DIRECT") {
+            const otherReadId = readReceipts[conversation.otherUser.id];
+            const isRead =
+                otherReadId !== null &&
+                otherReadId !== undefined &&
+                otherReadId >= messageId;
+            return {
+                status: (isRead ? "ALL_READ" : "SENT") as "ALL_READ" | "SENT",
+                title: isRead ? "Read" : "Sent",
+            };
+        }
+
+        // GROUP conversation
+        const otherEntries = Object.entries(readReceipts).filter(
+            ([uid]) => currentUser ? Number(uid) !== currentUser.id : true,
+        );
+
+        if (otherEntries.length === 0) {
+            return { status: "SENT" as const, title: "Sent" };
+        }
+
+        const readCount = otherEntries.filter(
+            ([_, lastReadId]) => lastReadId !== null && lastReadId >= messageId,
+        ).length;
+
+        if (readCount === 0) {
+            return { status: "SENT" as const, title: "Sent" };
+        }
+
+        if (readCount === otherEntries.length) {
+            return {
+                status: "ALL_READ" as const,
+                title: `Read by everyone (${readCount})`,
+            };
+        }
+
+        return {
+            status: "SOME_READ" as const,
+            title: `Read by ${readCount} of ${otherEntries.length}`,
+        };
+    };
+
     const getChatTitle = () => {
         if (conversation.type === "DIRECT")
             return conversation.otherUser.displayName;
@@ -726,6 +847,13 @@ export function ChatPane({
                                                         message.sentAt,
                                                     )}
                                                 </span>
+                                                {isOutgoing && (
+                                                    <MessageStatusIcon
+                                                        {...getMessageDeliveryStatus(
+                                                            message.id,
+                                                        )}
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     </div>
