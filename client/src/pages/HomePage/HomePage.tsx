@@ -7,6 +7,7 @@ import {
     type Conversation,
 } from "../../components/ConversationList/ConversationList";
 import { ChatPane, type Message } from "../../components/ChatPane/ChatPane";
+import { startWebSocket, addWsListener } from "../../api/ws";
 import type { ServerMessage } from "@socket-talk/shared";
 import "./HomePage.css";
 
@@ -50,58 +51,89 @@ export function HomePage() {
     }, []);
 
     useEffect(() => {
-        const wsUrl = import.meta.env.VITE_WS_URL;
-        if (!wsUrl) return;
-
-        let ws: WebSocket | null = null;
-        let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-        let isDisposed = false;
-
-        const connect = () => {
-            if (isDisposed) return;
-
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = (e) => {
-                console.log("WebSocket connected:", e);
-            };
-
-            ws.onmessage = (e) => {
-                try {
-                    const message = JSON.parse(e.data) as ServerMessage;
-                    console.log("WebSocket message received:", message);
-                } catch (err) {
-                    console.error("Failed to parse WebSocket message:", err);
-                }
-            };
-
-            ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
-            };
-
-            ws.onclose = (e) => {
-                console.log("WebSocket closed:", e);
-                ws = null;
-
-                if (!isDisposed) {
-                    console.log("Reconnecting WebSocket in 5s...");
-                    reconnectTimeout = setTimeout(connect, 5000);
-                }
-            };
-        };
-
-        connect();
-
-        return () => {
-            isDisposed = true;
-            if (reconnectTimeout) {
-                clearTimeout(reconnectTimeout);
-            }
-            if (ws) {
-                ws.close(1000, "Component unmounted");
-            }
-        };
+        return startWebSocket();
     }, []);
+
+    useEffect(() => {
+        return addWsListener((msg: ServerMessage) => {
+            if (msg.type === "new_message") {
+                const newMsg = msg.data;
+                setConversations((prev) => {
+                    const convIndex = prev.findIndex(
+                        (c) => c.id === newMsg.conversationId,
+                    );
+                    const targetConv = prev[convIndex];
+                    if (convIndex === -1 || targetConv.type === "SELF")
+                        return prev;
+
+                    const isSelected =
+                        selectedConversation?.id === newMsg.conversationId;
+
+                    const updatedConv: Conversation = {
+                        ...targetConv,
+                        lastMessage: {
+                            id: newMsg.id,
+                            content: newMsg.content,
+                            sentAt: newMsg.sentAt,
+                            sequenceNumber: newMsg.sequenceNumber,
+                            senderId: newMsg.sender.id,
+                            senderName: newMsg.sender.displayName,
+                        },
+                        unreadMessagesCount: isSelected
+                            ? targetConv.unreadMessagesCount
+                            : targetConv.unreadMessagesCount + 1,
+                    };
+
+                    const rest = prev.filter((_, idx) => idx !== convIndex);
+                    return [updatedConv, ...rest];
+                });
+            }
+        });
+    }, [selectedConversation?.id]);
+
+    useEffect(() => {
+        return addWsListener((msg) => {
+            if (msg.type === "new_dm") {
+                setConversations((prev) => {
+                    if (!user || prev.some((c) => c.id === msg.data.dm.conversationId)) {
+                        return prev;
+                    }
+
+                    const otherUser =
+                        user.id === msg.data.dm.user1.id
+                            ? msg.data.dm.user2
+                            : msg.data.dm.user1;
+                    const lastMessage = msg.data.firstMessage;
+                    const isFromMe = lastMessage.sender.id === user.id;
+                    const isSelected =
+                        selectedConversation?.id === msg.data.dm.conversationId;
+
+                    return [
+                        {
+                            type: "DIRECT",
+                            id: msg.data.dm.conversationId,
+                            unreadMessagesCount: isFromMe || isSelected ? 0 : 1,
+                            otherUser: {
+                                id: otherUser.id,
+                                avatarColor: otherUser.avatarColor,
+                                avatarUrl: otherUser.avatarUrl,
+                                displayName: otherUser.displayName,
+                            },
+                            lastMessage: {
+                                id: lastMessage.id,
+                                content: lastMessage.content,
+                                senderId: lastMessage.sender.id,
+                                senderName: lastMessage.sender.displayName,
+                                sentAt: lastMessage.sentAt,
+                                sequenceNumber: lastMessage.sequenceNumber,
+                            },
+                        },
+                        ...prev,
+                    ];
+                });
+            }
+        });
+    }, [user, selectedConversation?.id]);
 
     const handleSelectConversation = (conv: Conversation) => {
         setSelectedConversation(conv);
@@ -195,7 +227,13 @@ export function HomePage() {
             unreadMessagesCount: 0,
         };
 
-        setConversations((prev) => [newConversation, ...prev]);
+        setConversations((prev) => {
+            if (prev.find((c) => c.id === newConversation.id)) {
+                return prev;
+            }
+            
+            return [newConversation, ...prev];
+        });
         setSelectedConversation(newConversation);
         setPendingDirectUser(null);
         setPendingInputText("");

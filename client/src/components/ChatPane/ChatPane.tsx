@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "../Avatar/Avatar";
 import { api } from "../../api/api";
+import { addWsListener } from "../../api/ws";
 import type { Conversation } from "../ConversationList/ConversationList";
 import type { AuthUser } from "../../auth/AuthContext";
+import type { ServerMessage } from "@socket-talk/shared";
 import "./ChatPane.css";
 
 type MessagesResponse = Awaited<
@@ -92,11 +94,9 @@ export function ChatPane({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatScrollRef = useRef<HTMLDivElement>(null);
 
-    // Ref to avoid stale closures in polling interval
+    // Ref to avoid stale closures in mark-as-read
     const messagesRef = useRef(messages);
     messagesRef.current = messages;
-
-    const isPollingRef = useRef(false);
     const lastMarkedReadIdRef = useRef<number | null>(null);
     const readDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -140,6 +140,78 @@ export function ChatPane({
     const scheduleMarkAsReadRef = useRef(scheduleMarkAsRead);
     scheduleMarkAsReadRef.current = scheduleMarkAsRead;
 
+    const hasMoreAfterRef = useRef(hasMoreAfter);
+    // Eagerly update the ref to keep the WS listener in sync immediately
+    // (setHasMoreAfter schedules a re-render; the ref assignment is instant)
+    const setHasMoreAfterSync = (value: boolean) => {
+        hasMoreAfterRef.current = value;
+        setHasMoreAfter(value);
+    };
+
+    const wsBufferRef = useRef<Message[]>([]);
+
+    const flushWsBuffer = () => {
+        // Snapshot and clear the buffer synchronously BEFORE calling setMessages.
+        // The updater must be a pure function — React (StrictMode) calls it twice
+        // in dev to detect side effects. Mutating the ref inside the updater would
+        // cause the second invocation to see an empty buffer and return prev unchanged.
+        const buffered = wsBufferRef.current;
+        wsBufferRef.current = [];
+
+        setMessages((prev) => {
+            const lastSeq = prev[prev.length - 1]?.sequenceNumber ?? 0;
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newItems = buffered.filter(
+                (m) => m.sequenceNumber > lastSeq && !existingIds.has(m.id),
+            );
+
+            if (newItems.length === 0) return prev;
+
+            return [...prev, ...newItems];
+        });
+
+        requestAnimationFrame(() => {
+            const container = chatScrollRef.current;
+            if (container) {
+                const isNearBottom =
+                    container.scrollHeight -
+                        container.scrollTop -
+                        container.clientHeight <
+                    150;
+                if (isNearBottom) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        });
+    };
+
+    const handleIncomingWsMessage = (newMsg: Message) => {
+        console.log("[WS] handleIncomingWsMessage", {
+            msgConvId: newMsg.conversationId,
+            currentConvId: conversation.id,
+            match: newMsg.conversationId === conversation.id,
+            hasMoreAfter: hasMoreAfterRef.current,
+            bufferLen: wsBufferRef.current.length,
+        });
+
+        if (newMsg.conversationId !== conversation.id) return;
+
+        wsBufferRef.current.push(newMsg);
+
+        if (!hasMoreAfterRef.current) {
+            flushWsBuffer();
+        }
+    };
+
+    // Listen to WebSocket new_message events
+    useEffect(() => {
+        return addWsListener((msg: ServerMessage) => {
+            if (msg.type === "new_message") {
+                handleIncomingWsMessage(msg.data);
+            }
+        });
+    }, [conversation.id]);
+
     // Initial message fetch
     useEffect(() => {
         let isMounted = true;
@@ -148,6 +220,7 @@ export function ChatPane({
             clearTimeout(readDebounceTimerRef.current);
         }
         lastMarkedReadIdRef.current = null;
+        wsBufferRef.current = [];
 
         const fetchMessages = async () => {
             setIsLoading(true);
@@ -173,9 +246,20 @@ export function ChatPane({
                 return;
             }
 
-            if (!Array.isArray(response) && "messages" in response) {
+            if ("messages" in response) {
                 setMessages(response.messages);
-                setLastReadMessageId(response.lastReadMessageId);
+                if ("lastReadMessageId" in response) {
+                    setLastReadMessageId(response.lastReadMessageId);
+                }
+                if (response.hasMoreBefore !== undefined) {
+                    setHasMoreBefore(response.hasMoreBefore);
+                }
+                if (response.hasMoreAfter !== undefined) {
+                    setHasMoreAfterSync(response.hasMoreAfter);
+                    if (!response.hasMoreAfter) {
+                        flushWsBuffer();
+                    }
+                }
             }
 
             setIsLoading(false);
@@ -283,17 +367,21 @@ export function ChatPane({
             return;
         }
 
-        if (Array.isArray(response)) {
-            if (response.length === 0) {
+        if ("messages" in response) {
+            if (response.hasMoreBefore !== undefined) {
+                setHasMoreBefore(response.hasMoreBefore);
+            } else if (response.messages.length === 0) {
                 setHasMoreBefore(false);
-            } else {
+            }
+
+            if (response.messages.length > 0) {
                 const scrollContainer = chatScrollRef.current;
                 const previousScrollHeight = scrollContainer?.scrollHeight ?? 0;
                 const previousScrollTop = scrollContainer?.scrollTop ?? 0;
 
                 setMessages((prev) => {
                     const existingIds = new Set(prev.map((m) => m.id));
-                    const newMessages = response.filter(
+                    const newMessages = response.messages.filter(
                         (m) => !existingIds.has(m.id),
                     );
                     return [...newMessages, ...prev];
@@ -339,17 +427,26 @@ export function ChatPane({
             return;
         }
 
-        if (Array.isArray(response)) {
-            if (response.length === 0) {
-                setHasMoreAfter(false);
-            } else {
+        if ("messages" in response) {
+            const nextHasMoreAfter =
+                response.hasMoreAfter !== undefined
+                    ? response.hasMoreAfter
+                    : response.messages.length > 0;
+
+            setHasMoreAfterSync(nextHasMoreAfter);
+
+            if (response.messages.length > 0) {
                 setMessages((prev) => {
                     const existingIds = new Set(prev.map((m) => m.id));
-                    const newMessages = response.filter(
+                    const newMessages = response.messages.filter(
                         (m) => !existingIds.has(m.id),
                     );
                     return [...prev, ...newMessages];
                 });
+            }
+
+            if (!nextHasMoreAfter) {
+                flushWsBuffer();
             }
         }
 
@@ -370,63 +467,6 @@ export function ChatPane({
         }
     }, [isLoading, isLoadingAfter, hasMoreAfter, messages.length]);
 
-    // Isolated poll fetch — does NOT touch hasMoreAfter so polling continues even on empty responses
-    const pollFetch = async () => {
-        if (
-            isPollingRef.current ||
-            isLoading ||
-            messagesRef.current.length === 0
-        )
-            return;
-
-        const newestMessage =
-            messagesRef.current[messagesRef.current.length - 1];
-        if (!newestMessage) return;
-
-        isPollingRef.current = true;
-
-        const response = await api("/conversations/:conversationId/messages", {
-            method: "GET",
-            params: {
-                conversationId: conversation.id,
-            },
-            queries: {
-                after: newestMessage.sequenceNumber,
-            },
-        });
-
-        if (
-            !("error" in response) &&
-            Array.isArray(response) &&
-            response.length > 0
-        ) {
-            setMessages((prev) => {
-                const existingIds = new Set(prev.map((m) => m.id));
-                const newMessages = response.filter(
-                    (m) => !existingIds.has(m.id),
-                );
-                return newMessages.length > 0
-                    ? [...prev, ...newMessages]
-                    : prev;
-            });
-        }
-
-        isPollingRef.current = false;
-    };
-
-    // Polling: only active when at the live edge (hasMoreAfter === false)
-    useEffect(() => {
-        if (isLoading || hasMoreAfter) return;
-
-        const intervalId = setInterval(() => {
-            void pollFetch();
-        }, 5000);
-
-        return () => {
-            clearInterval(intervalId);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoading, hasMoreAfter, conversation.id]);
 
     // Scroll listener for top and bottom reach
     const handleScroll = () => {
@@ -810,6 +850,7 @@ export function ChatPane({
         if (currentUser) {
             const sentMessage: Message = {
                 id: response.id,
+                conversationId: response.conversationId,
                 content: response.content,
                 sentAt: response.sentAt,
                 sequenceNumber: response.sequenceNumber,
