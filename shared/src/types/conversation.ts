@@ -50,6 +50,7 @@ type Message = {
     content: string;
     sentAt: string;
     sequenceNumber: number;
+    conversationId: number;
     sender: {
         id: number;
         username: string;

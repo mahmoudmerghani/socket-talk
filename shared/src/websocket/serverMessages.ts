@@ -12,4 +12,40 @@ export type ServerMessage =
               conversationId: number;
               messageId: number;
           };
+      }
+    | {
+          type: "new_dm";
+          data: {
+              dm: {
+                  conversationId: number;
+                  user1: {
+                      id: number;
+                      username: string;
+                      displayName: string;
+                      avatarColor: string;
+                      avatarUrl: string | null;
+                  };
+                  user2: {
+                      id: number;
+                      username: string;
+                      displayName: string;
+                      avatarColor: string;
+                      avatarUrl: string | null;
+                  };
+              };
+              firstMessage: {
+                  content: string;
+                  sentAt: string;
+                  sequenceNumber: number;
+                  sender: {
+                      id: number;
+                      username: string;
+                      displayName: string;
+                      avatarColor: string;
+                      avatarUrl: string | null;
+                  };
+                  id: number;
+                  conversationId: number;
+              };
+          };
       };
