@@ -134,6 +134,18 @@
   flex-shrink: 0;
 }
 
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+  border: 2px solid var(--background);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
 .saved-messages-badge-avatar {
   width: 3.2rem;
   height: 3.2rem;
@@ -209,6 +221,23 @@
   color: var(--accent-strong);
   font-weight: 500;
 }
+
+.conversation-status-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 0.35rem;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.conversation-status-icon.sent {
+  color: var(--text-soft);
+}
+
+.conversation-status-icon.read {
+  color: var(--accent);
+}
+
 
 .conversation-unread-badge {
   flex-shrink: 0;

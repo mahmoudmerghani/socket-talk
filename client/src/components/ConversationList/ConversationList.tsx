@@ -51,6 +51,47 @@ function formatTime(isoString?: string | null): string {
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+function ConversationStatusIcon({ isRead }: { isRead: boolean }) {
+    if (!isRead) {
+        return (
+            <svg
+                className="conversation-status-icon sent"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-label="Sent"
+                title="Sent"
+            >
+                <path d="M3.5 8.5l3 3 6.5-6.5" />
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            className="conversation-status-icon read"
+            viewBox="0 0 20 16"
+            width="16"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-label="Read"
+            title="Read"
+        >
+            <path d="M1.5 8.5l3 3 6.5-6.5" />
+            <path d="M7 8.5l3 3 6.5-6.5" />
+        </svg>
+    );
+}
+
 export function ConversationList({
     conversations,
     selectedId,
@@ -146,6 +187,16 @@ export function ConversationList({
 
                             if (item.type === "DIRECT") {
                                 const unread = item.unreadMessagesCount;
+                                const isOutgoing =
+                                    item.lastMessage?.senderId === user?.id;
+                                const isRead =
+                                    isOutgoing &&
+                                    item.lastMessage &&
+                                    item.otherUser.lastReadMessageId !== null &&
+                                    item.otherUser.lastReadMessageId !== undefined &&
+                                    item.otherUser.lastReadMessageId >=
+                                        item.lastMessage.id;
+
                                 return (
                                     <li key={`direct-${item.id}`}>
                                         <button
@@ -160,6 +211,12 @@ export function ConversationList({
                                                     avatarUrl={item.otherUser.avatarUrl}
                                                     size="3.2rem"
                                                 />
+                                                {item.otherUser.isOnline ? (
+                                                    <span
+                                                        className="online-indicator"
+                                                        title="Online"
+                                                    />
+                                                ) : null}
                                             </div>
                                             <div className="conversation-item-content">
                                                 <div className="conversation-item-header">
@@ -175,8 +232,15 @@ export function ConversationList({
                                                         {item.lastMessage
                                                             ? (
                                                                 <>
+                                                                    {isOutgoing && (
+                                                                        <ConversationStatusIcon
+                                                                            isRead={
+                                                                                !!isRead
+                                                                            }
+                                                                        />
+                                                                    )}
                                                                     <span className="snippet-sender">
-                                                                        {item.lastMessage.senderId === user?.id ? "You" : item.lastMessage.senderName}:
+                                                                        {isOutgoing ? "You" : item.lastMessage.senderName}:
                                                                     </span>{" "}
                                                                     {item.lastMessage.content}
                                                                 </>

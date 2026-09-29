@@ -87,6 +87,34 @@ export function HomePage() {
                     const rest = prev.filter((_, idx) => idx !== convIndex);
                     return [updatedConv, ...rest];
                 });
+            } else if (msg.type === "message_read") {
+                const { userId, conversationId, messageId } = msg.data;
+                setConversations((prev) => {
+                    const convIndex = prev.findIndex(
+                        (c) => c.id === conversationId,
+                    );
+                    if (convIndex === -1) return prev;
+                    const targetConv = prev[convIndex];
+                    if (targetConv.type !== "DIRECT") return prev;
+
+                    if (targetConv.otherUser.id === userId) {
+                        const updatedConv: Conversation = {
+                            ...targetConv,
+                            otherUser: {
+                                ...targetConv.otherUser,
+                                lastReadMessageId: Math.max(
+                                    targetConv.otherUser.lastReadMessageId ?? 0,
+                                    messageId,
+                                ),
+                            },
+                        };
+                        const updated = [...prev];
+                        updated[convIndex] = updatedConv;
+                        return updated;
+                    }
+
+                    return prev;
+                });
             }
         });
     }, [selectedConversation?.id]);
@@ -118,6 +146,9 @@ export function HomePage() {
                                 avatarColor: otherUser.avatarColor,
                                 avatarUrl: otherUser.avatarUrl,
                                 displayName: otherUser.displayName,
+                                lastReadMessageId:
+                                    isFromMe ? null : lastMessage.id,
+                                isOnline: otherUser.isOnline,
                             },
                             lastMessage: {
                                 id: lastMessage.id,
@@ -215,6 +246,8 @@ export function HomePage() {
                 displayName: pendingDirectUser.displayName,
                 avatarColor: pendingDirectUser.avatarColor,
                 avatarUrl: pendingDirectUser.avatarUrl ?? "",
+                lastReadMessageId: null,
+                isOnline: false,
             },
             lastMessage: {
                 id: response.id,
@@ -231,7 +264,7 @@ export function HomePage() {
             if (prev.find((c) => c.id === newConversation.id)) {
                 return prev;
             }
-            
+
             return [newConversation, ...prev];
         });
         setSelectedConversation(newConversation);
