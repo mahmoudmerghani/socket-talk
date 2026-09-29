@@ -16,6 +16,8 @@ type Conversation =
               displayName: string;
               avatarColor: string;
               avatarUrl: string | null;
+              lastReadMessageId: number | null;
+              isOnline: boolean;
           };
       }
     | {

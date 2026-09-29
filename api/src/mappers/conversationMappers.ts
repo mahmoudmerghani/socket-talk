@@ -35,6 +35,8 @@ export function toGetAllUserConversationsResponse(
                         displayName: c.otherUser.displayName,
                         avatarColor: c.otherUser.avatarColor,
                         avatarUrl: c.otherUser.avatarUrl,
+                        lastReadMessageId: c.otherUser.lastReadMessageId,
+                        isOnline: c.otherUser.isOnline,
                     },
                 };
 

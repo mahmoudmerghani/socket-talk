@@ -155,3 +155,7 @@ eventBus.on("dm_created", (data) => {
         >,
     );
 });
+
+export function isUserOnline(userId: number) {
+    return clients.has(userId);
+}

@@ -17,6 +17,7 @@ type EventMap = {
                 displayName: string;
                 avatarColor: string;
                 avatarUrl: string | null;
+                isOnline: boolean;
             };
             user2: {
                 id: number;
@@ -24,6 +25,7 @@ type EventMap = {
                 displayName: string;
                 avatarColor: string;
                 avatarUrl: string | null;
+                isOnline: boolean;
             };
         };
         firstMessage: {

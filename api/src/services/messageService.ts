@@ -9,6 +9,7 @@ import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
 import { eventBus } from "../eventBus.js";
 import { getUserById } from "./userService.js";
+import { isUserOnline } from "../websocket.js";
 
 export const MESSAGES_PAGE_SIZE = 50;
 
@@ -148,7 +149,11 @@ export async function sendMessageToUser(
 
         eventBus.emit("dm_created", {
             firstMessage: message,
-            dm: { conversationId: dm.conversationId, user1, user2 },
+            dm: {
+                conversationId: dm.conversationId,
+                user1: { ...user1, isOnline: isUserOnline(user1.id) },
+                user2: { ...user2, isOnline: isUserOnline(user2.id) },
+            },
         });
     }
 

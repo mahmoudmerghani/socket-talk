@@ -24,6 +24,7 @@ export type ServerMessage =
                       displayName: string;
                       avatarColor: string;
                       avatarUrl: string | null;
+                      isOnline: boolean;
                   };
                   user2: {
                       id: number;
@@ -31,6 +32,7 @@ export type ServerMessage =
                       displayName: string;
                       avatarColor: string;
                       avatarUrl: string | null;
+                      isOnline: boolean;
                   };
               };
               firstMessage: {

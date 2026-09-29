@@ -4,6 +4,7 @@ import { type CreateGroupRequest } from "@socket-talk/shared/schemas/conversatio
 import { Prisma } from "../../generated/prisma/client.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { HttpError } from "../utils/HttpError.js";
+import { isUserOnline } from "../websocket.js";
 
 export async function createGroup(
     userId: number,
@@ -401,6 +402,11 @@ export async function getAllUserConversations(userId: number) {
                         select: {
                             user1: true,
                             user2: true,
+                            conversation: {
+                                select: {
+                                    participants: true,
+                                },
+                            },
                         },
                     },
                     selfChat: true,
@@ -450,6 +456,16 @@ export async function getAllUserConversations(userId: number) {
                 }
 
                 const otherUser = dm.user1.id === userId ? dm.user2 : dm.user1;
+                const otherUserLastReadMessageId =
+                    dm.conversation.participants.find(
+                        (p) => p.userId === otherUser.id,
+                    )?.lastReadMessageId;
+
+                if (otherUserLastReadMessageId === undefined) {
+                    throw new Error(
+                        `Invalid DIRECT conversation ${c.conversation.id}: missing participants`,
+                    );
+                }
 
                 return {
                     type: "DIRECT" as const,
@@ -468,6 +484,8 @@ export async function getAllUserConversations(userId: number) {
                         displayName: otherUser.displayName,
                         avatarColor: otherUser.avatarColor,
                         avatarUrl: otherUser.avatarUrl,
+                        lastReadMessageId: otherUserLastReadMessageId,
+                        isOnline: isUserOnline(otherUser.id),
                     },
                 };
             }
