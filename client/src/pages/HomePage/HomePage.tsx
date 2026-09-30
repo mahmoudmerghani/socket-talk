@@ -66,6 +66,14 @@ export function HomePage() {
                     if (convIndex === -1 || targetConv.type === "SELF")
                         return prev;
 
+                    // Deduplicate: skip if we've already processed this message
+                    if (
+                        targetConv.lastMessage &&
+                        newMsg.sequenceNumber <= targetConv.lastMessage.sequenceNumber
+                    ) {
+                        return prev;
+                    }
+
                     const isSelected =
                         selectedConversation?.id === newMsg.conversationId;
 

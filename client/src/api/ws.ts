@@ -68,6 +68,7 @@ export function stopWebSocket() {
         reconnectTimeout = null;
     }
     if (ws) {
+        ws.onclose = null; // Prevent the async close event from scheduling a ghost reconnect
         ws.close(1000, "WebSocket stopped");
         ws = null;
     }

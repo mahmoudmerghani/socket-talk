@@ -89,7 +89,6 @@ function MessageStatusIcon({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                title={title}
                 aria-label={title}
             >
                 <path d="M3.5 8.5l3 3 6.5-6.5" />
@@ -108,7 +107,6 @@ function MessageStatusIcon({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            title={title}
             aria-label={title}
         >
             <path d="M1.5 8.5l3 3 6.5-6.5" />

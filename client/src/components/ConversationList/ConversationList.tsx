@@ -65,7 +65,6 @@ function ConversationStatusIcon({ isRead }: { isRead: boolean }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-label="Sent"
-                title="Sent"
             >
                 <path d="M3.5 8.5l3 3 6.5-6.5" />
             </svg>
@@ -84,7 +83,6 @@ function ConversationStatusIcon({ isRead }: { isRead: boolean }) {
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-label="Read"
-            title="Read"
         >
             <path d="M1.5 8.5l3 3 6.5-6.5" />
             <path d="M7 8.5l3 3 6.5-6.5" />
