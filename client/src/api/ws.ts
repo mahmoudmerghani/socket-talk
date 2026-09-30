@@ -9,12 +9,13 @@ let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let isStarted = false;
 
 function connect() {
-    if (!isStarted) return;
+    if (!isStarted || ws) return;
 
     const wsUrl = import.meta.env.VITE_WS_URL;
     if (!wsUrl) return;
 
     ws = new WebSocket(wsUrl);
+    const currentWs = ws;
 
     ws.onopen = (e) => {
         console.log("WebSocket connected:", e);
@@ -42,6 +43,17 @@ function connect() {
 
     ws.onclose = (e) => {
         console.log("WebSocket closed:", e);
+
+        // Ignore if it's not the current WebSocket instance.
+        if (currentWs !== ws) {
+            return;
+        }
+
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+
         ws = null;
 
         if (isStarted) {
@@ -69,6 +81,7 @@ export function stopWebSocket() {
     }
     if (ws) {
         ws.onclose = null; // Prevent the async close event from scheduling a ghost reconnect
+        ws.onmessage = null; // Prevent dispatching messages on an already stopped WS
         ws.close(1000, "WebSocket stopped");
         ws = null;
     }
