@@ -259,8 +259,8 @@ export async function getConversationMessagesAroundCursor(
 
     return {
         messages,
-        hasBefore: firstBefore !== null,
-        hasAfter: firstAfter !== null,
+        hasMoreBefore: firstBefore !== null,
+        hasMoreAfter: firstAfter !== null,
     };
 }
 
@@ -294,7 +294,7 @@ export async function getConversationMessagesBeforeCursor(
         firstBeforePromise,
     ]);
 
-    return { messages, hasBefore: firstBefore !== null };
+    return { messages, hasMoreBefore: firstBefore !== null };
 }
 
 export async function getConversationMessagesAfterCursor(
@@ -327,7 +327,7 @@ export async function getConversationMessagesAfterCursor(
         firstAfterPromise,
     ]);
 
-    return { messages, hasAfter: firstAfter !== null };
+    return { messages, hasMoreAfter: firstAfter !== null };
 }
 
 // initial messages when user opens a conversation
@@ -391,8 +391,8 @@ export async function getConversationMessagesAroundLastReadMessage(
         messages,
         othersLastReadMessageIds,
         lastReadMessageId: lastReadMessage?.id ?? null,
-        hasBefore: firstBefore !== null,
-        hasAfter: firstAfter !== null,
+        hasMoreBefore: firstBefore !== null,
+        hasMoreAfter: firstAfter !== null,
     };
 }
 

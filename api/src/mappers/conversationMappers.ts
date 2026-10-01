@@ -103,6 +103,8 @@ export function toGetConversationMessagesWithoutQueryResponse(
                 sequenceNumber: m.sequenceNumber,
             }),
         ),
+        hasMoreAfter: messagesObj.hasMoreAfter,
+        hasMoreBefore: messagesObj.hasMoreBefore,
         othersLastReadMessageIds: messagesObj.othersLastReadMessageIds.map(
             (o): OthersLastReadMessageIdsArray[number] => ({
                 lastReadMessageId: o.lastReadMessageId,
