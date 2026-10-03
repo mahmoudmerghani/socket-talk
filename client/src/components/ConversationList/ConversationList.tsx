@@ -239,7 +239,7 @@ export function ConversationList({
                                                                     )}
                                                                     <span className="snippet-sender">
                                                                         {isOutgoing ? "You" : item.lastMessage.senderName}:
-                                                                    </span>{" "}
+                                                                    </span>
                                                                     {item.lastMessage.content}
                                                                 </>
                                                             )
