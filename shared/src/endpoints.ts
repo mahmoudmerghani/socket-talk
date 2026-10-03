@@ -18,6 +18,12 @@ export type Endpoints = {
         };
     };
 
+    "/auth/guest": {
+        POST: {
+            bodies: Bodies<never, bodies.GuestResponse>;
+        };
+    };
+
     "/auth/signup": {
         POST: {
             bodies: Bodies<bodies.SignupRequest, bodies.SignupResponse>;

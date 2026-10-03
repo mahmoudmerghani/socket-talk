@@ -6,10 +6,11 @@ import type {
 import * as userService from "./userService.js";
 import { HttpError } from "../utils/HttpError.js";
 import { hash, compare } from "bcryptjs";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { EMAIL_FAILURE_GITHUB_CODE } from "@socket-talk/shared";
 import type { Prisma } from "../../generated/prisma/client.js";
+import { withTransaction } from "../utils/withTransaction.js";
 
 type DBClient = typeof prisma | Prisma.TransactionClient;
 
@@ -99,6 +100,46 @@ export async function loginUser({
     const { password: _, ...userWithoutPassword } = user;
 
     return { session, user: userWithoutPassword };
+}
+
+export async function loginAsGuest(): Promise<IdentityReturnType> {
+    let username: string;
+    let displayName: string;
+
+    let numOfAttempts: number;
+    for (numOfAttempts = 0; numOfAttempts < 10; numOfAttempts++) {
+        const randomNumber = randomInt(1000, 10000);
+        username = `guest${randomNumber}`;
+        displayName = `Guest ${randomNumber}`;
+
+        const existing = await userService.getUserByUsername(username);
+
+        if (!existing) break;
+    }
+
+    if (numOfAttempts === 10) {
+        console.error("Could not find a unique username for guest user");
+        throw new HttpError(500, "Could not create a guest account");
+    }
+
+    const { user, session } = await prisma.$transaction(async (tx) => {
+        const user = await userService.createUser(
+            {
+                displayName,
+                username,
+                isGuest: true,
+            },
+            tx,
+        );
+
+        const session = await createUserSession(user.id, tx);
+
+        return { user, session };
+    });
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { session, user: userWithoutPassword satisfies UserWithoutPassword };
 }
 
 export async function verifySession(sessionId: string) {
@@ -225,7 +266,7 @@ export async function getGithubUser(code: string) {
     };
 }
 
-export type GithubUserData = Awaited<ReturnType<typeof getGithubUser>>
+export type GithubUserData = Awaited<ReturnType<typeof getGithubUser>>;
 
 export async function loginWithGithub(code: string) {
     const user = await getGithubUser(code);
@@ -244,7 +285,10 @@ export async function loginWithGithub(code: string) {
     if (exists) {
         const session = await createUserSession(exists.user.id);
         const { password: _, ...userWithoutPassword } = exists.user;
-        return { session, user: userWithoutPassword } satisfies IdentityReturnType;
+        return {
+            session,
+            user: userWithoutPassword,
+        } satisfies IdentityReturnType;
     }
 
     // if user doesn't exist then return github user data to continue sign up

@@ -30,6 +30,7 @@ model User {
   avatarUrl               String?
   avatarPath              String?
   createdAt               DateTime                  @default(now())
+  isGuest                 Boolean                   @default(false)
   sessions                Session[]
   oauthAccounts           OauthAccount[]
   messages                Message[]

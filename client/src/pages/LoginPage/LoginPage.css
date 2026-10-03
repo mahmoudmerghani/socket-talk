@@ -143,3 +143,50 @@
     transform: translateY(0) scale(1);
   }
 }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.guest-btn {
+  margin-top: 0.75rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.82rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.guest-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: rgba(73, 169, 234, 0.06);
+  transform: translateY(-1px);
+}
+
+.guest-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.guest-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

@@ -14,6 +14,8 @@ export type GetAuthUserResponse = UserResponse;
 
 export type LoginResponse = UserResponse;
 
+export type GuestResponse = UserResponse;
+
 export type SignupResponse = UserResponse;
 
 export type GetGithubPendingSignupDataResponse = {

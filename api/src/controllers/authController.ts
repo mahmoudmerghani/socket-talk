@@ -28,6 +28,17 @@ export const login: Controller<"/auth/login", "POST"> = async (req, res) => {
     res.json(toAuthUserResponse(user));
 };
 
+export const loginAsGuest: Controller<"/auth/guest", "POST"> = async (req, res) => {
+    const { user, session } = await authService.loginAsGuest();
+
+    res.cookie("sid", session.id, {
+        ...cookieOptions,
+        expires: session.expiresAt,
+    });
+
+    res.json(toAuthUserResponse(user));
+};
+
 export const logout: Controller<"/auth/logout", "POST"> = async (req, res) => {
     await authService.logoutUser(req.cookies.sid);
     res.clearCookie("sid");
