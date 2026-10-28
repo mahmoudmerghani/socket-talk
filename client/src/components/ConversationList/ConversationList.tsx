@@ -148,11 +148,15 @@ export function ConversationList({
                     <span>Chat with people</span>
                 </Link>
 
-                <button
-                    type="button"
-                    className="conversation-quick-btn disabled"
-                    title="Groups coming soon"
-                    aria-label="Discover groups (coming soon)"
+                <Link
+                    to="/groups"
+                    state={{
+                        joinedConversationIds: conversations
+                            .filter((c) => c.type === "GROUP")
+                            .map((c) => c.id),
+                    }}
+                    className="conversation-quick-btn"
+                    title="Discover groups"
                 >
                     <svg
                         viewBox="0 0 24 24"
@@ -170,7 +174,7 @@ export function ConversationList({
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
                     <span>Discover groups</span>
-                </button>
+                </Link>
             </div>
 
             <div className="conversation-search-container">

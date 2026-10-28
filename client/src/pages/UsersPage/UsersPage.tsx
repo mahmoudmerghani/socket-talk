@@ -4,7 +4,6 @@ import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
-import type { ResError } from "@socket-talk/shared";
 import "./UsersPage.css";
 
 export type UserListItem = {
@@ -27,10 +26,9 @@ export function UsersPage() {
         setIsLoading(true);
         setError(null);
 
-        // Fetch user list from /users endpoint
-        const response = (await api("/users" as any, {
+        const response = (await api("/users", {
             method: "GET",
-        })) as UserListItem[] | ResError;
+        }));
 
         if ("error" in response) {
             setError(response.error);

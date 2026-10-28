@@ -6,6 +6,7 @@ import { ProfileAvatarPage } from "./pages/ProfileAvatarPage/ProfileAvatarPage";
 import { SignupPage } from "./pages/SignupPage/SignupPage";
 import { GithubPendingSignupPage } from "./pages/GithubPendingSignupPage/GithubPendingSignupPage";
 import { UsersPage } from "./pages/UsersPage/UsersPage";
+import { GroupsPage } from "./pages/GroupsPage/GroupsPage";
 import { AuthRoute } from "./routes/AuthRoute";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import "./App.css";
@@ -67,6 +68,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <UsersPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/groups"
+                    element={
+                        <ProtectedRoute>
+                            <GroupsPage />
                         </ProtectedRoute>
                     }
                 />

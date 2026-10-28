@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
@@ -223,12 +223,29 @@ export function HomePage() {
     };
 
     useEffect(() => {
-        const state = location.state as { targetUser?: Message["sender"] } | null;
-        if (!isLoading && state?.targetUser) {
+        const state = location.state as {
+            targetUser?: Message["sender"];
+            targetConversationId?: number;
+        } | null;
+
+        if (!state) return;
+
+        if (!isLoading && state.targetUser) {
             handleSelectUser(state.targetUser);
             navigate(".", { replace: true, state: {} });
+            return;
         }
-    }, [isLoading, location.state]);
+
+        if (!isLoading && state.targetConversationId) {
+            const convId = state.targetConversationId;
+            const existing = conversations.find((c) => c.id === convId);
+
+            if (existing) {
+                handleSelectConversation(existing);
+                navigate(".", { replace: true, state: {} });
+            }
+        }
+    }, [isLoading, location.state, conversations]);
 
     const handleSendFirstDirectMessage = async () => {
         if (
