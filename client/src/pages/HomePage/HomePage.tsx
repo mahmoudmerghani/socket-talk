@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
@@ -27,6 +28,8 @@ export function HomePage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchConversations = async () => {
@@ -69,7 +72,8 @@ export function HomePage() {
                     // Deduplicate: skip if we've already processed this message
                     if (
                         targetConv.lastMessage &&
-                        newMsg.sequenceNumber <= targetConv.lastMessage.sequenceNumber
+                        newMsg.sequenceNumber <=
+                            targetConv.lastMessage.sequenceNumber
                     ) {
                         return prev;
                     }
@@ -131,7 +135,10 @@ export function HomePage() {
         return addWsListener((msg) => {
             if (msg.type === "new_dm") {
                 setConversations((prev) => {
-                    if (!user || prev.some((c) => c.id === msg.data.dm.conversationId)) {
+                    if (
+                        !user ||
+                        prev.some((c) => c.id === msg.data.dm.conversationId)
+                    ) {
                         return prev;
                     }
 
@@ -154,8 +161,9 @@ export function HomePage() {
                                 avatarColor: otherUser.avatarColor,
                                 avatarUrl: otherUser.avatarUrl,
                                 displayName: otherUser.displayName,
-                                lastReadMessageId:
-                                    isFromMe ? null : lastMessage.id,
+                                lastReadMessageId: isFromMe
+                                    ? null
+                                    : lastMessage.id,
                                 isOnline: otherUser.isOnline,
                             },
                             lastMessage: {
@@ -213,6 +221,14 @@ export function HomePage() {
             setPendingDirectUser(targetUser);
         }
     };
+
+    useEffect(() => {
+        const state = location.state as { targetUser?: Message["sender"] } | null;
+        if (!isLoading && state?.targetUser) {
+            handleSelectUser(state.targetUser);
+            navigate(".", { replace: true, state: {} });
+        }
+    }, [isLoading, location.state]);
 
     const handleSendFirstDirectMessage = async () => {
         if (
@@ -362,6 +378,7 @@ export function HomePage() {
             <main className="chat-layout-main">
                 {selectedConversation ? (
                     <ChatPane
+                        key={selectedConversation.id}
                         conversation={selectedConversation}
                         currentUser={user}
                         onBack={handleBackToList}

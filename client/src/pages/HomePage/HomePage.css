@@ -69,6 +69,27 @@
   gap: 0.4rem;
 }
 
+.sidebar-action-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-soft);
+  padding: 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+
+.sidebar-action-btn:hover {
+  color: var(--accent-strong);
+  background: rgba(73, 169, 234, 0.12);
+  border-color: rgba(73, 169, 234, 0.25);
+  transform: translateY(-1px);
+}
+
 .sidebar-logout-btn {
   background: transparent;
   border: 1px solid transparent;
