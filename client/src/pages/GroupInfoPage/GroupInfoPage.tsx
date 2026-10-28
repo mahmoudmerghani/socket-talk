@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/api";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { BrandLogo } from "../../components/BrandLogo/BrandLogo";
+import { useAuth } from "../../auth/AuthContext";
 import "./GroupInfoPage.css";
 
 type GroupInfoResponse = Awaited<
@@ -11,7 +12,17 @@ type GroupInfoResponse = Awaited<
 
 type GroupInfo = Extract<GroupInfoResponse, { group: unknown }>;
 
+
+export type UserListItem = {
+    id: number;
+    username: string;
+    displayName: string;
+    avatarColor: string;
+    avatarUrl: string | null;
+};
+
 export function GroupInfoPage() {
+    const { user: currentUser } = useAuth();
     const { conversationId } = useParams<{ conversationId: string }>();
     const navigate = useNavigate();
 
@@ -20,6 +31,20 @@ export function GroupInfoPage() {
     const [error, setError] = useState<string | null>(null);
 
     const convId = Number(conversationId);
+
+    const handleStartChat = (targetUser: UserListItem) => {
+        navigate("/", {
+            state: {
+                targetUser: {
+                    id: targetUser.id,
+                    username: targetUser.username,
+                    displayName: targetUser.displayName,
+                    avatarColor: targetUser.avatarColor,
+                    avatarUrl: targetUser.avatarUrl,
+                },
+            },
+        });
+    };
 
     useEffect(() => {
         if (!convId || isNaN(convId)) {
@@ -179,6 +204,7 @@ export function GroupInfoPage() {
 
                             <ul className="group-info-members-list">
                                 {data.members.map((member) => {
+                                    const isSelf = currentUser?.id === member.id
                                     const isCreator = member.id === data.group.creatorId;
                                     const joinedDate = new Date(member.joinedAt).toLocaleDateString(
                                         undefined,
@@ -206,10 +232,39 @@ export function GroupInfoPage() {
                                                             Creator
                                                         </span>
                                                     )}
+                                                    {isSelf && (
+                                                        <span className="group-info-creator-badge">
+                                                            You
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <span className="group-info-member-sub">
                                                     @{member.username} &middot; Joined {joinedDate}
                                                 </span>
+
+                                            </div>
+                                            <div className="user-card-action">
+                                                <button
+                                                    type="button"
+                                                    className="user-message-btn"
+                                                    onClick={() => handleStartChat(member)}
+                                                >
+                                                    <svg
+                                                        viewBox="0 0 24 24"
+                                                        width="16"
+                                                        height="16"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                                    </svg>
+                                                    <span>
+                                                        {isSelf ? "Saved Messages" : "Chat"}
+                                                    </span>
+                                                </button>
                                             </div>
                                         </li>
                                     );
