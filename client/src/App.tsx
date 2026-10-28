@@ -7,6 +7,7 @@ import { SignupPage } from "./pages/SignupPage/SignupPage";
 import { GithubPendingSignupPage } from "./pages/GithubPendingSignupPage/GithubPendingSignupPage";
 import { UsersPage } from "./pages/UsersPage/UsersPage";
 import { GroupsPage } from "./pages/GroupsPage/GroupsPage";
+import { CreateGroupPage } from "./pages/CreateGroupPage/CreateGroupPage";
 import { AuthRoute } from "./routes/AuthRoute";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import "./App.css";
@@ -76,6 +77,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <GroupsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/groups/create"
+                    element={
+                        <ProtectedRoute>
+                            <CreateGroupPage />
                         </ProtectedRoute>
                     }
                 />

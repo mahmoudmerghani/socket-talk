@@ -149,11 +149,33 @@ export function GroupsPage() {
 
             <main className="groups-page-main">
                 <div className="groups-container">
-                    <div className="groups-title-section">
-                        <h1>Discover Groups</h1>
-                        <p className="groups-subtitle">
-                            Find active communities and join conversations
-                        </p>
+                    <div className="groups-title-row">
+                        <div className="groups-title-section">
+                            <h1>Discover Groups</h1>
+                            <p className="groups-subtitle">
+                                Find active communities and join conversations
+                            </p>
+                        </div>
+                        <Link
+                            to="/groups/create"
+                            className="groups-create-link"
+                            aria-label="Create a new group"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            <span>Create a group</span>
+                        </Link>
                     </div>
 
                     {actionError && (

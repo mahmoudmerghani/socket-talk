@@ -62,10 +62,42 @@
   gap: 1.6rem;
 }
 
+.groups-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .groups-title-section {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.groups-create-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.58rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 169, 234, 0.35);
+  background: rgba(73, 169, 234, 0.08);
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.groups-create-link:hover {
+  background: rgba(73, 169, 234, 0.18);
+  border-color: var(--accent);
+  color: var(--text);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(73, 169, 234, 0.18);
 }
 
 .groups-title-section h1 {
