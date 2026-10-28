@@ -1,0 +1,283 @@
+.group-info-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(73, 169, 234, 0.12), transparent 40%),
+    radial-gradient(circle at 25% 85%, rgba(111, 186, 240, 0.07), transparent 45%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  color: var(--text);
+}
+
+/* -- Header ------------------------------------------- */
+.group-info-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(17, 27, 33, 0.85);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.5rem;
+}
+
+.group-info-header-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-info-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.group-info-back-btn:hover {
+  color: var(--accent);
+  background: rgba(73, 169, 234, 0.08);
+  border-color: rgba(73, 169, 234, 0.2);
+  transform: translateX(-2px);
+}
+
+/* -- Main layout --------------------------------------- */
+.group-info-main {
+  flex: 1;
+  padding: 2.2rem 1.25rem 4rem;
+}
+
+.group-info-container {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* -- Loading / Error states ---------------------------- */
+.group-info-loading,
+.group-info-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1rem;
+  gap: 0.9rem;
+  color: var(--text-soft);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.group-info-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(73, 169, 234, 0.18);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: gi-spin 0.85s linear infinite;
+}
+
+@keyframes gi-spin {
+  to { transform: rotate(360deg); }
+}
+
+.group-info-loading p {
+  color: var(--text-soft);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.group-info-error-state svg {
+  color: #ff7070;
+}
+
+.group-info-error-state h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.group-info-error-state p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.group-info-back-link {
+  margin-top: 0.5rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.group-info-back-link:hover {
+  text-decoration: underline;
+}
+
+/* -- Hero ---------------------------------------------- */
+.group-info-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2.2rem 1.5rem 2rem;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(31, 44, 56, 0.85), rgba(24, 34, 45, 0.9));
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.group-info-avatar-ring {
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(73, 169, 234, 0.4), rgba(73, 169, 234, 0.1));
+  box-shadow: 0 0 0 2px rgba(73, 169, 234, 0.2), 0 8px 24px rgba(73, 169, 234, 0.15);
+}
+
+.group-info-name {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.group-info-meta {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.group-info-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.72rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  color: #08263d;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.group-info-open-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 6px 18px rgba(73, 169, 234, 0.3);
+}
+
+/* -- Members section ----------------------------------- */
+.group-info-section {
+  background: linear-gradient(180deg, rgba(31, 44, 56, 0.8), rgba(24, 34, 45, 0.9));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.group-info-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 1.1rem 1.4rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+.group-info-count-badge {
+  margin-left: auto;
+  padding: 0.18rem 0.65rem;
+  border-radius: 20px;
+  background: rgba(73, 169, 234, 0.12);
+  border: 1px solid rgba(73, 169, 234, 0.25);
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.group-info-members-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.group-info-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.8rem 1.4rem;
+  transition: background 0.15s ease;
+}
+
+.group-info-member-item:hover {
+  background: rgba(73, 169, 234, 0.04);
+}
+
+.group-info-member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.group-info-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.group-info-member-name {
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-info-creator-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.12rem 0.48rem;
+  border-radius: 10px;
+  background: rgba(73, 169, 234, 0.15);
+  border: 1px solid rgba(73, 169, 234, 0.3);
+  color: var(--accent-strong);
+  flex-shrink: 0;
+}
+
+.group-info-member-sub {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Avatar } from "../Avatar/Avatar";
 import { api } from "../../api/api";
 import { addWsListener } from "../../api/ws";
@@ -664,12 +665,18 @@ export function ChatPane({
                             size="2.6rem"
                         />
                     ) : conversation.type === "GROUP" ? (
-                        <Avatar
-                            displayName={conversation.group.name}
-                            avatarColor={conversation.group.avatarColor}
-                            avatarUrl={conversation.group.avatarUrl}
-                            size="2.6rem"
-                        />
+                        <Link
+                            to={`/groups/${conversation.id}/info`}
+                            className="chat-header-group-link"
+                            aria-label={`View info for ${conversation.group.name}`}
+                        >
+                            <Avatar
+                                displayName={conversation.group.name}
+                                avatarColor={conversation.group.avatarColor}
+                                avatarUrl={conversation.group.avatarUrl}
+                                size="2.6rem"
+                            />
+                        </Link>
                     ) : (
                         <div
                             className="saved-messages-badge-avatar small"
@@ -687,12 +694,25 @@ export function ChatPane({
                     )}
                 </div>
 
-                <div className="chat-header-info">
-                    <h2 className="chat-header-title">{getChatTitle()}</h2>
-                    <span className="chat-header-subtitle">
-                        {getChatSubtitle()}
-                    </span>
-                </div>
+                {conversation.type === "GROUP" ? (
+                    <Link
+                        to={`/groups/${conversation.id}/info`}
+                        className="chat-header-info chat-header-group-link"
+                        aria-label={`View info for ${conversation.group.name}`}
+                    >
+                        <h2 className="chat-header-title">{getChatTitle()}</h2>
+                        <span className="chat-header-subtitle">
+                            {getChatSubtitle()}
+                        </span>
+                    </Link>
+                ) : (
+                    <div className="chat-header-info">
+                        <h2 className="chat-header-title">{getChatTitle()}</h2>
+                        <span className="chat-header-subtitle">
+                            {getChatSubtitle()}
+                        </span>
+                    </div>
+                )}
             </header>
 
             {/* Messages Feed Area */}

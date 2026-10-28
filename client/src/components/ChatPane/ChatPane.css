@@ -68,6 +68,28 @@
   color: var(--text-soft);
 }
 
+/* Group clickable header link */
+.chat-header-group-link {
+  display: flex;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  transition: background 0.18s ease;
+  cursor: pointer;
+}
+
+.chat-header-group-link:hover {
+  background: rgba(73, 169, 234, 0.08);
+}
+
+.chat-header-group-link.chat-header-info {
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  padding: 0.25rem 0.5rem;
+  margin-left: -0.5rem;
+}
+
 /* Messages Scroll Area */
 .chat-messages-scroll {
   flex: 1;
