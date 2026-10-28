@@ -54,7 +54,7 @@ export function GroupsPage() {
                 ?.joinedConversationIds,
         );
 
-        if (!hasPassedState) {
+        if (!hasPassedState || joinedIds.size === 0) {
             const convsRes = await api("/conversations", {
                 method: "GET",
             });
